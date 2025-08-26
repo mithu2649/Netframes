@@ -1,0 +1,267 @@
+
+Request 1:
+
+GET
+	https://net50.cc/playlist.php?id=81678621&t=Fall for Me&tm=1756144266&h=c3742d1a8de1a5b449d082a91bfa14ec::8b830b830f277533dc6e1735c056f9fd::1756144265::ni
+Status
+200
+VersionHTTP/2
+Transferred968 B (997 B size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+cache-control	no-cache, no-store, must-revalidate
+cf-cache-status	DYNAMIC
+cf-ray	974cef86eb2633c6-DEL
+content-encoding	gzip
+content-length	355
+content-type	application/json
+date	Mon, 25 Aug 2025 17:51:07 GMT
+expires	0
+nel	{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+pragma	no-cache
+report-to	{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=P65386Y2is0tQmE4nCFIzcrUtOQVdWpL0cgb8bjaLqJBnnKbgatp7hC%2F4pYdPhci25XDVoHDhrix6bhFcvIb8YFEpR7qG84%3D"}]}
+server	cloudflare
+vary 	Accept-Encoding
+X-Firefox-Spdy	h2
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Connection
+	keep-alive
+Cookie
+	81676290=1850%3A3260; 81698397=31%3A9862; t_hash=403ba9131b0cf2327d5645243b6e402c%3A%3A1756073813%3A%3Ani; 81702845=26%3A3189; 81902035=511%3A8876; 81662171=146%3A3622; 81678621=96%3A6305
+Host
+	net50.cc
+Referer
+	https://net50.cc/play.php?id=81678621&in=c3742d1a8de1a5b449d082a91bfa14ec::8b830b830f277533dc6e1735c056f9fd::1756144265::ni
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+TE
+	trailers
+User-Agent
+	Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+
+scheme
+	https
+host
+	net50.cc
+filename
+	/hls/81678621.m3u8
+in
+	c3742d1a8de1a5b449d082a91bfa14ec::c6b400b084b74e2e01abce8bd8dde5f2::1756144267::ni
+Address
+	104.26.11.128:443
+Status
+200
+VersionHTTP/2
+Transferred1.28 kB (3.34 kB size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+access-control-allow-origin
+	*
+cache-control
+	no-cache, no-store, must-revalidate
+cf-cache-status
+	DYNAMIC
+cf-ray
+	974cef8b4ea733c6-DEL
+content-encoding
+	gzip
+content-length
+	617
+content-type
+	application/vnd.apple.mpegurl
+date
+	Mon, 25 Aug 2025 17:51:08 GMT
+expires
+	0
+nel
+	{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+pragma
+	no-cache
+report-to
+	{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=W7iLFCb4a%2F0Bvz98cG56Yb9hWEw0mo0PwpqQzeUiPw6uFYtJi66S1G6MiiIOaKE%2BFVveFRGz%2FKACCbadTJd1YOI2WK8aVks%3D"}]}
+server
+	cloudflare
+vary
+	Accept-Encoding
+X-Firefox-Spdy
+	h2
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Connection
+	keep-alive
+Cookie
+	81676290=1850%3A3260; 81698397=31%3A9862; t_hash=403ba9131b0cf2327d5645243b6e402c%3A%3A1756073813%3A%3Ani; 81702845=26%3A3189; 81902035=511%3A8876; 81662171=146%3A3622; 81678621=96%3A6305
+Host
+	net50.cc
+Referer
+	https://net50.cc/play.php?id=81678621&in=c3742d1a8de1a5b449d082a91bfa14ec::8b830b830f277533dc6e1735c056f9fd::1756144265::ni
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+TE
+	trailers
+User-Agent
+	Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+
+
+
+Request 2: 
+
+GET
+	https://net50.cc/hls/81678621.m3u8?in=c3742d1a8de1a5b449d082a91bfa14ec::77ea17a63a8cc3f73ac220bceb718d6f::1756149885::ni
+Status
+200
+VersionHTTP/2
+Transferred1.28 kB (3.34 kB size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+access-control-allow-origin
+	*
+cache-control
+	no-cache, no-store, must-revalidate
+cf-cache-status
+	DYNAMIC
+cf-ray
+	974d78b5bccba3b7-AMD
+content-encoding
+	gzip
+content-length
+	618
+content-type
+	application/vnd.apple.mpegurl
+date
+	Mon, 25 Aug 2025 19:24:46 GMT
+expires
+	0
+nel
+	{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+pragma
+	no-cache
+report-to
+	{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2BmYc4tv0BxbM28tIFEl0mT3aOQCZ4EWbj96D4KqW8n%2Fa9pCKrGzxI9edt0kP0E%2BXDlqpooCILTs1ZCLnfOg2nfjq4Weuwpc%3D"}]}
+server
+	cloudflare
+vary
+	Accept-Encoding
+X-Firefox-Spdy
+	h2
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Connection
+	keep-alive
+Cookie
+	81676290=1850%3A3260; 81698397=31%3A9862; t_hash=ff65cda491b3a9d6655a1869f1928b0f%3A%3A1756149819%3A%3Ani; 81702845=26%3A3189; 81902035=511%3A8876; 81662171=146%3A3622; 81678621=96%3A6305; 82078188=1245%3A4205
+Host
+	net50.cc
+Referer
+	https://net50.cc/play.php?id=81678621&in=c3742d1a8de1a5b449d082a91bfa14ec::74e348b92cab50dcc9271ff88a254464::1756149884::ni
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+TE
+	trailers
+User-Agent
+	Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0
+
+
+all links inside m3u8 link requests are having heading and cookies. below is an example request:
+
+GET
+	
+scheme
+	https
+host
+	s21.nm-cdn4.top
+filename
+	/files/81678621/480p/480p.m3u8
+in
+	c3742d1a8de1a5b449d082a91bfa14ec::556b0074178cbab3220b95fbb5890712::1756149886::ni
+Address
+	[2606:4700:8d9a:90d5:65d9:502:fb0f:87b3]:443
+Status
+200
+OK
+VersionHTTP/1.1
+Transferred20.61 kB (19.96 kB size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+Access-Control-Allow-Origin
+	*
+Cache-Control
+	no-cache, no-store, must-revalidate
+Cf-Cache-Status
+	DYNAMIC
+CF-RAY
+	974d78ba1db8ce09-SIN
+Connection
+	keep-alive
+Content-Type
+	application/vnd.apple.mpegurl
+Date
+	Mon, 25 Aug 2025 19:24:47 GMT
+Expires
+	0
+Nel
+	{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Pragma
+	no-cache
+Report-To
+	{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=W4daiQ7A6a54CqNqUrrgMjNHoXgazAp6fkzxzayyKQkPW05YWgw8Ht3i7aTPBWRqW%2BEVHZ2pNlmb19BMyu7MZ70q4GJVEf%2Fa5ky0wdd%2FpgHWMRgWF09l3qKa"}]}
+Server
+	cloudflare
+Transfer-Encoding
+	chunked
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Connection
+	keep-alive
+Host
+	s21.nm-cdn4.top
+Origin
+	https://net50.cc
+Referer
+	https://net50.cc/
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	cross-site
+User-Agent
+	Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0

@@ -19,6 +19,10 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+ext {
+    set("kotlin_version", "1.5.31")
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
