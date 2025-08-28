@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:netframes/features/movie_details/domain/entities/cast.dart';
 
 class MovieDetails extends Equatable {
-  final int id;
+  final String id;
   final String title;
   final String overview;
   final String posterPath;

@@ -8,7 +8,7 @@ abstract class MovieDetailsEvent extends Equatable {
 }
 
 class FetchMovieDetails extends MovieDetailsEvent {
-  final int movieId;
+  final String movieId;
 
   const FetchMovieDetails(this.movieId);
 

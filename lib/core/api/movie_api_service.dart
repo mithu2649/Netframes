@@ -34,7 +34,7 @@ class MovieApiService {
     return _getTvShows('/tv/top_rated');
   }
 
-  Future<List<Movie>> getRecommendedMovies(int movieId) async {
+  Future<List<Movie>> getRecommendedMovies(String movieId) async {
     return _getMovies('/movie/$movieId/recommendations');
   }
 
@@ -62,7 +62,7 @@ class MovieApiService {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return (data['results'] as List).map((movie) => Movie(
-        id: movie['id'],
+        id: movie['id'].toString(),
         title: movie['title'],
         overview: movie['overview'],
         posterPath: movie['poster_path'] ?? '',
@@ -74,7 +74,7 @@ class MovieApiService {
     }
   }
 
-  Future<MovieDetails> getMovieDetails(int movieId) async {
+  Future<MovieDetails> getMovieDetails(String movieId) async {
     final response = await http.get(Uri.parse('${ApiConstants.baseUrl}/movie/$movieId?api_key=${ApiConstants.apiKey}&append_to_response=credits'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -83,7 +83,7 @@ class MovieApiService {
         profilePath: cast['profile_path'] ?? '',
       )).toList();
       return MovieDetails(
-        id: data['id'],
+        id: data['id'].toString(),
         title: data['title'],
         overview: data['overview'],
         posterPath: data['poster_path'] ?? '',
@@ -161,7 +161,7 @@ class MovieApiService {
       return (data['results'] as List).map((result) {
         if (result['media_type'] == 'movie') {
           return MovieSearchResult(Movie(
-            id: result['id'],
+            id: result['id'].toString(),
             title: result['title'],
             overview: result['overview'],
             posterPath: result['poster_path'] ?? '',

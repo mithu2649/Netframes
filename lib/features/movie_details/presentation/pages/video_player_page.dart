@@ -52,6 +52,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         autoPlay: true,
         fit: BoxFit.cover,
         fullScreenByDefault: true,
+        placeholder: const Center(child: CircularProgressIndicator()),
+        controlsConfiguration: const BetterPlayerControlsConfiguration(
+          controlBarHeight: 60,
+          iconsColor: Colors.white,
+          playIcon: Icons.play_arrow,
+          pauseIcon: Icons.pause,
+          skipBackIcon: Icons.replay_30,
+          skipForwardIcon: Icons.forward_30,
+          forwardSkipTimeInMilliseconds: 30000,
+          backwardSkipTimeInMilliseconds: 30000,
+          enableSkips: true,
+        ),
       ),
       betterPlayerDataSource: betterPlayerDataSource,
     );
@@ -70,19 +82,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
       body: BetterPlayer(
         controller: _betterPlayerController,
       ),
-      // body: AndroidView(
-      //   viewType: 'VideoPlayerView',
-      //   creationParams: {
-      //     'url': widget.videoUrl,
-      //     'headers': widget.headers,
-      //     'cookies': widget.cookies,
-      //   },
-      //   creationParamsCodec: const StandardMessageCodec(),
-      // ),
     );
   }
 }

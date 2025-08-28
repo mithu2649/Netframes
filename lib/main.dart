@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/core/api/movie_api_service.dart';
 import 'package:netframes/core/services/theme_service.dart';
+import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
+import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
+import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/home/presentation/bloc/home_bloc.dart';
 import 'package:netframes/features/home/presentation/bloc/home_event.dart';
 import 'package:netframes/features/settings/presentation/bloc/theme_bloc.dart';
@@ -13,18 +16,37 @@ import 'package:netframes/features/tv_shows/presentation/bloc/tv_shows_event.dar
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Create a single instance of the provider
+  // Create a single instance of the providers
   final netflixMirrorProvider = NetflixMirrorProvider();
-  // Pre-fetch the cookie at startup
+  final jioHotstarProvider = JioHotstarProvider();
+  final primeVideoProvider = PrimeVideoProvider();
+  final dramaDripProvider = DramaDripProvider();
+  // Pre-fetch the cookies at startup
   await netflixMirrorProvider.bypass();
+  await jioHotstarProvider.bypass();
+  await primeVideoProvider.bypass();
 
-  runApp(MyApp(netflixMirrorProvider: netflixMirrorProvider));
+  runApp(MyApp(
+    netflixMirrorProvider: netflixMirrorProvider,
+    jioHotstarProvider: jioHotstarProvider,
+    primeVideoProvider: primeVideoProvider,
+    dramaDripProvider: dramaDripProvider,
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final NetflixMirrorProvider netflixMirrorProvider;
+  final JioHotstarProvider jioHotstarProvider;
+  final PrimeVideoProvider primeVideoProvider;
+  final DramaDripProvider dramaDripProvider;
 
-  const MyApp({super.key, required this.netflixMirrorProvider});
+  const MyApp({
+    super.key,
+    required this.netflixMirrorProvider,
+    required this.jioHotstarProvider,
+    required this.primeVideoProvider,
+    required this.dramaDripProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +55,11 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => HomeBloc(
             movieApiService: MovieApiService(),
-            netflixMirrorProvider: netflixMirrorProvider, // Use the single instance
-          )..add(const FetchHomeData('Netflix')),
+            netflixMirrorProvider: netflixMirrorProvider,
+            jioHotstarProvider: jioHotstarProvider,
+            primeVideoProvider: primeVideoProvider,
+            dramaDripProvider: dramaDripProvider,
+          )..add(const FetchHomeData('PrimeVideo')),
         ),
         BlocProvider(
           create: (context) => ThemeBloc(themeService: ThemeService()),

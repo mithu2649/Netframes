@@ -31,6 +31,36 @@ class HomePage extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     ChoiceChip(
+                      label: const Text('JioHotstar'),
+                      selected: state.selectedProvider == 'JioHotstar',
+                      onSelected: (selected) {
+                        if (selected) {
+                          context.read<HomeBloc>().add(const SelectProvider('JioHotstar'));
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
+                      label: const Text('Prime Video'),
+                      selected: state.selectedProvider == 'PrimeVideo',
+                      onSelected: (selected) {
+                        if (selected) {
+                          context.read<HomeBloc>().add(const SelectProvider('PrimeVideo'));
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
+                      label: const Text('DramaDrip'),
+                      selected: state.selectedProvider == 'DramaDrip',
+                      onSelected: (selected) {
+                        if (selected) {
+                          context.read<HomeBloc>().add(const SelectProvider('DramaDrip'));
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    ChoiceChip(
                       label: const Text('TMDB'),
                       selected: state.selectedProvider == 'TMDB',
                       onSelected: (selected) {

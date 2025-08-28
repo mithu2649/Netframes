@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Movie extends Equatable {
-  final int id;
+  final String id;
   final String title;
   final String overview;
   final String posterPath;

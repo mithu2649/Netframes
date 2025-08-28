@@ -18,7 +18,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
         final List<SearchResult> watchlist = [];
         for (final id in watchlistIds) {
           try {
-            final movieDetails = await movieApiService.getMovieDetails(int.parse(id));
+            final movieDetails = await movieApiService.getMovieDetails(id);
             watchlist.add(MovieSearchResult(Movie(
               id: movieDetails.id,
               title: movieDetails.title,

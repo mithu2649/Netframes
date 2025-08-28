@@ -5,7 +5,7 @@ import 'package:netframes/core/widgets/shimmer_loading.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/movie_details/presentation/pages/movie_details_page.dart';
 
-import 'package:netframes/features/movie_details/presentation/pages/netflix_movie_details_page.dart';
+import 'package:netframes/features/movie_details/presentation/pages/streaming_movie_details_page.dart';
 
 class MovieCard extends StatelessWidget {
   final Movie movie;
@@ -20,41 +20,22 @@ class MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = movie.provider == 'Netflix'
+    final imageUrl = movie.provider == 'Netflix' || movie.provider == 'JioHotstar' || movie.provider == 'PrimeVideo' || movie.provider == 'DramaDrip'
         ? movie.posterPath
         : 'https://image.tmdb.org/t/p/w500${movie.posterPath}';
 
-    final httpHeaders = movie.provider == 'Netflix'
-        ? {'Referer': 'https://net2025.cc/tv/home'}
+    final httpHeaders = movie.provider == 'Netflix' || movie.provider == 'JioHotstar' || movie.provider == 'PrimeVideo' || movie.provider == 'DramaDrip'
+        ? {'Referer': 'https://dramadrip.com/'}
         : null;
 
     return GestureDetector(
       onTap: () {
-        if (movie.provider == 'Netflix') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NetflixMovieDetailsPage(movie: movie),
-            ),
-          );
-        } else {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  MovieDetailsPage(movie: movie),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                return SharedAxisTransition(
-                  animation: animation,
-                  secondaryAnimation: secondaryAnimation,
-                  transitionType: SharedAxisTransitionType.scaled,
-                  child: child,
-                );
-              },
-            ),
-          );
-        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StreamingMovieDetailsPage(movie: movie),
+          ),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.all(8.0),

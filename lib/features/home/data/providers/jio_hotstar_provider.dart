@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'package:better_player/better_player.dart';
 import 'package:flutter/foundation.dart';
@@ -10,11 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:html/parser.dart' as parser;
 
-class NetflixMirrorProvider implements StreamingProvider {
+class JioHotstarProvider implements StreamingProvider {
   final String _baseUrl = "https://net2025.cc";
   String _cookie = "";
-  static const String _cookieKey = 'netflix_cookie';
-  static const String _cookieTimestampKey = 'netflix_cookie_timestamp';
+  static const String _cookieKey = 'jio_hotstar_cookie';
+  static const String _cookieTimestampKey = 'jio_hotstar_cookie_timestamp';
 
   final Map<String, String> _headers = {
     'X-Requested-With': 'XMLHttpRequest',
@@ -55,7 +56,7 @@ class NetflixMirrorProvider implements StreamingProvider {
         final response = await http
             .post(Uri.parse('$_baseUrl/tv/p.php'), headers: {
           'X-Requested-With': 'XMLHttpRequest',
-          'Referer': '$_baseUrl/home',
+          'Referer': '$_baseUrl/tv/home',
         });
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -96,46 +97,55 @@ class NetflixMirrorProvider implements StreamingProvider {
   Map<String, String> get _apiHeaders {
     return {
       ..._headers,
-      'Cookie': 't_hash_t=$_cookie; ott=nf; hd=on',
-      'Referer': '$_baseUrl/home',
+      'Cookie': 't_hash_t=$_cookie; ott=hs; hd=on',
+      'Referer': '$_baseUrl/tv/home',
     };
   }
 
   @override
   Future<Map<String, List<Movie>>> getHomePage() async {
     await bypass();
-    final response = await http.get(Uri.parse('$_baseUrl/home'), headers: _apiHeaders);
+    final response = await http.get(Uri.parse('$_baseUrl/mobile/home'), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
+      if (kDebugMode) {
+        print('JioHotstarProvider: getHomePage: response body: ${response.body}');
+      }
       final document = parser.parse(response.body);
       final Map<String, List<Movie>> homePageData = {};
 
-      final rows = document.querySelectorAll('.lolomoRow');
+      final rows = document.querySelectorAll('.tray-container, #top10');
+      if (kDebugMode) {
+        print('JioHotstarProvider: getHomePage: rows found: ${rows.length}');
+      }
       for (var row in rows) {
-        final title = row.querySelector('h2 > span > div')?.text.trim() ?? 'Unknown';
+        final title = row.querySelector('h2, span')?.text.trim() ?? 'Unknown';
         final movies = <Movie>[];
-        final movieElements = row.querySelectorAll('img.lazy');
+        final movieElements = row.querySelectorAll('article, .top10-post');
+        if (kDebugMode) {
+          print('JioHotstarProvider: getHomePage: movie elements found for "$title": ${movieElements.length}');
+        }
         for (var movieElement in movieElements) {
-          final id = movieElement.attributes['data-src']
-              ?.split('/')
-              .last
-              .split('.')
-              .first;
+          final anchorElement = movieElement.querySelector('a');
+          final id = anchorElement?.attributes['data-post'] ?? movieElement.attributes['data-post'];
           if (id != null) {
             movies.add(
               Movie(
                 id: id,
-                title: '',
+                title: '', 
                 overview: '',
-                posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
+                posterPath: 'https://imgcdn.media/hs/v/${int.tryParse(id)}.jpg',
                 backdropPath: '',
                 voteAverage: 0.0,
-                provider: 'Netflix',
+                provider: 'JioHotstar',
               ),
             );
           }
         }
         homePageData[title] = movies;
+      }
+      if (kDebugMode) {
+        print('JioHotstarProvider: getHomePage: final data: $homePageData');
       }
       return homePageData;
     } else {
@@ -148,7 +158,7 @@ class NetflixMirrorProvider implements StreamingProvider {
     var page = 1;
     while (true) {
       final url =
-          '$_baseUrl/episodes.php?s=$seasonId&series=$seriesId&t=${DateTime.now().millisecondsSinceEpoch}&page=$page';
+          '$_baseUrl/mobile/hs/episodes.php?s=$seasonId&series=$seriesId&t=${DateTime.now().millisecondsSinceEpoch}&page=$page';
       final response = await http.get(Uri.parse(url), headers: _apiHeaders);
       if (response.statusCode != 200) {
         break;
@@ -168,7 +178,7 @@ class NetflixMirrorProvider implements StreamingProvider {
   @override
   Future<NetflixMovieDetails> getMovieDetails(Movie movie) async {
     await bypass();
-    final url = '$_baseUrl/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url = '$_baseUrl/mobile/hs/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -195,23 +205,31 @@ class NetflixMirrorProvider implements StreamingProvider {
       } else {
         // It's a TV Show
         final allEpisodes = <_Episode>[];
-        allEpisodes.addAll(postData.episodes.whereType<_Episode>());
+        final episodeIds = <String>{};
 
-        if (postData.nextPageShow == 1 && postData.nextPageSeason != null) {
-          final seasonEpisodes = await _getEpisodes(movie.id, postData.nextPageSeason!);
-          allEpisodes.addAll(seasonEpisodes);
-        }
-
-        if (postData.season != null) {
-          final seasonData = postData.season!
-              .map((e) => _Season.fromJson(e))
-              .toList();
-          for (var season in seasonData.sublist(0, seasonData.length -1)) {
-            final seasonEpisodes = await _getEpisodes(movie.id, season.id);
-            allEpisodes.addAll(seasonEpisodes);
+        // Add initial episodes and record their IDs
+        for (var episode in postData.episodes.whereType<_Episode>()) {
+          if (episodeIds.add(episode.id)) {
+            allEpisodes.add(episode);
           }
         }
 
+        // Fetch episodes from ALL seasons listed
+        if (postData.season != null) {
+          final seasonData = postData.season!
+              .map((e) => _Season.fromJson(e as Map<String, dynamic>))
+              .toList();
+          for (var season in seasonData) {
+            final seasonEpisodes = await _getEpisodes(movie.id, season.id);
+            for (var episode in seasonEpisodes) {
+              if (episodeIds.add(episode.id)) {
+                allEpisodes.add(episode);
+              }
+            }
+          }
+        }
+
+        // Group all fetched episodes by season
         final episodesBySeason = <String, List<NetflixEpisode>>{};
         for (var episode in allEpisodes) {
           final seasonNum = episode.s.replaceAll('S', '');
@@ -223,10 +241,11 @@ class NetflixMirrorProvider implements StreamingProvider {
             title: episode.t,
             season: seasonNum,
             episode: episode.ep.replaceAll('E', ''),
-            thumbnail: 'https://imgcdn.media/epimg/150/${episode.id}.jpg',
+            thumbnail: 'https://imgcdn.media/hsepimg/150/${episode.id}.jpg',
           ));
         }
 
+        // Create NetflixSeason objects
         episodesBySeason.forEach((seasonNum, episodes) {
           seasons.add(NetflixSeason(
             season: seasonNum,
@@ -234,6 +253,7 @@ class NetflixMirrorProvider implements StreamingProvider {
           ));
         });
 
+        // Sort seasons
         seasons.sort((a, b) => int.parse(a.season).compareTo(int.parse(b.season)));
       }
 
@@ -264,6 +284,7 @@ class NetflixMirrorProvider implements StreamingProvider {
     return url;
   }
 
+  @override
   Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
     if (kDebugMode) {
       print('loadLink called');
@@ -271,12 +292,12 @@ class NetflixMirrorProvider implements StreamingProvider {
     }
     await bypass();
     const playerBaseUrl = 'https://net50.cc';
-    final h = _cookie;
+    // final h = _cookie;
     final url =
-        '$playerBaseUrl/tv/playlist.php?id=${movie.id}&t=${movie.title}&tm=${DateTime.now().millisecondsSinceEpoch}&h=$h';
+        '$playerBaseUrl/mobile/hs/playlist.php?id=${movie.id}&t=${movie.title}&tm=${DateTime.now().millisecondsSinceEpoch}';
     final headers = {
       ..._apiHeaders,
-      'Referer': '$playerBaseUrl/tv/play.php?id=${movie.id}&in=$h',
+      'Referer': '$playerBaseUrl/tv/home',
     };
     if (kDebugMode) {
       print('Loading link from: $url');
@@ -300,9 +321,7 @@ class NetflixMirrorProvider implements StreamingProvider {
       final subtitles = <BetterPlayerSubtitlesSource>[];
       final videoHeaders = {
         'Cookie': _apiHeaders['Cookie']!,
-        'Referer': episode != null
-            ? '$playerBaseUrl/play.php?id=${movie.id}&s=${episode.season}&e=${episode.episode}&in=$h'
-            : '$playerBaseUrl/play.php?id=${movie.id}&in=$h',
+        'Referer': '$playerBaseUrl/tv/home',
       };
 
       if (kDebugMode) {
@@ -341,24 +360,6 @@ class NetflixMirrorProvider implements StreamingProvider {
         }
       }
 
-      final subtitleUrl = 'http://subs.nfmirrorcdn.top/files/${movie.id}/${movie.id}-en.[CC].srt';
-      try {
-        final subtitleResponse = await http.head(Uri.parse(subtitleUrl));
-        if (subtitleResponse.statusCode == 200) {
-          subtitles.add(
-            BetterPlayerSubtitlesSource(
-              type: BetterPlayerSubtitlesSourceType.network,
-              urls: [subtitleUrl],
-              name: "English",
-              headers: videoHeaders,
-            ),
-          );
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('No subtitles found: $e');
-        }
-      }
       return {
         'streams': videoStreams,
         'subtitles': subtitles,
@@ -371,7 +372,7 @@ class NetflixMirrorProvider implements StreamingProvider {
   @override
   Future<List<Movie>> search(String query) async {
     await bypass();
-    final url = '$_baseUrl/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url = '$_baseUrl/mobile/hs/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -381,10 +382,10 @@ class NetflixMirrorProvider implements StreamingProvider {
           id: result.id,
           title: result.title,
           overview: '',
-          posterPath: 'https://imgcdn.media/poster/v/${result.id}.jpg',
+          posterPath: 'https://imgcdn.media/hs/v/${result.id}.jpg',
           backdropPath: '',
           voteAverage: 0.0,
-          provider: 'Netflix',
+          provider: 'JioHotstar',
         );
       }).toList();
     } else {
