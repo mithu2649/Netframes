@@ -3,8 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:netframes/core/widgets/shimmer_loading.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
-import 'package:netframes/features/movie_details/presentation/pages/movie_details_page.dart';
-
 import 'package:netframes/features/movie_details/presentation/pages/streaming_movie_details_page.dart';
 
 class MovieCard extends StatelessWidget {
