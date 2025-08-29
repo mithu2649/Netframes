@@ -16,9 +16,7 @@ class NetflixMirrorProvider implements StreamingProvider {
   static const String _cookieKey = 'netflix_cookie';
   static const String _cookieTimestampKey = 'netflix_cookie_timestamp';
 
-  final Map<String, String> _headers = {
-    'X-Requested-With': 'XMLHttpRequest',
-  };
+  final Map<String, String> _headers = {'X-Requested-With': 'XMLHttpRequest'};
 
   @override
   Future<void> clearCache() async {
@@ -52,11 +50,13 @@ class NetflixMirrorProvider implements StreamingProvider {
     int retries = 0;
     while (retries < 5) {
       try {
-        final response = await http
-            .post(Uri.parse('$_baseUrl/tv/p.php'), headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Referer': '$_baseUrl/home',
-        });
+        final response = await http.post(
+          Uri.parse('$_baseUrl/tv/p.php'),
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': '$_baseUrl/home',
+          },
+        );
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           if (data['r'] == 'n') {
@@ -65,7 +65,8 @@ class NetflixMirrorProvider implements StreamingProvider {
               print('Raw cookie from bypass: $rawCookie');
             }
             final cookieValue =
-                RegExp(r't_hash_t=([^;]+)').firstMatch(rawCookie)?.group(1) ?? '';
+                RegExp(r't_hash_t=([^;]+)').firstMatch(rawCookie)?.group(1) ??
+                '';
             newCookieValue = cookieValue;
             break;
           }
@@ -104,7 +105,10 @@ class NetflixMirrorProvider implements StreamingProvider {
   @override
   Future<Map<String, List<Movie>>> getHomePage() async {
     await bypass();
-    final response = await http.get(Uri.parse('$_baseUrl/home'), headers: _apiHeaders);
+    final response = await http.get(
+      Uri.parse('$_baseUrl/home'),
+      headers: _apiHeaders,
+    );
 
     if (response.statusCode == 200) {
       final document = parser.parse(response.body);
@@ -112,7 +116,8 @@ class NetflixMirrorProvider implements StreamingProvider {
 
       final rows = document.querySelectorAll('.lolomoRow');
       for (var row in rows) {
-        final title = row.querySelector('h2 > span > div')?.text.trim() ?? 'Unknown';
+        final title =
+            row.querySelector('h2 > span > div')?.text.trim() ?? 'Unknown';
         final movies = <Movie>[];
         final movieElements = row.querySelectorAll('img.lazy');
         for (var movieElement in movieElements) {
@@ -168,7 +173,8 @@ class NetflixMirrorProvider implements StreamingProvider {
   @override
   Future<NetflixMovieDetails> getMovieDetails(Movie movie) async {
     await bypass();
-    final url = '$_baseUrl/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url =
+        '$_baseUrl/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -181,24 +187,29 @@ class NetflixMirrorProvider implements StreamingProvider {
 
       if (postData.episodes.isEmpty || postData.episodes.first == null) {
         // It's a movie
-        seasons.add(NetflixSeason(
-          season: '1',
-          episodes: [
-            NetflixEpisode(
-              id: movie.id.toString(),
-              title: postData.title,
-              season: '1',
-              episode: '1',
-            )
-          ],
-        ));
+        seasons.add(
+          NetflixSeason(
+            season: '1',
+            episodes: [
+              NetflixEpisode(
+                id: movie.id.toString(),
+                title: postData.title,
+                season: '1',
+                episode: '1',
+              ),
+            ],
+          ),
+        );
       } else {
         // It's a TV Show
         final allEpisodes = <_Episode>[];
         allEpisodes.addAll(postData.episodes.whereType<_Episode>());
 
         if (postData.nextPageShow == 1 && postData.nextPageSeason != null) {
-          final seasonEpisodes = await _getEpisodes(movie.id, postData.nextPageSeason!);
+          final seasonEpisodes = await _getEpisodes(
+            movie.id,
+            postData.nextPageSeason!,
+          );
           allEpisodes.addAll(seasonEpisodes);
         }
 
@@ -206,7 +217,7 @@ class NetflixMirrorProvider implements StreamingProvider {
           final seasonData = postData.season!
               .map((e) => _Season.fromJson(e))
               .toList();
-          for (var season in seasonData.sublist(0, seasonData.length -1)) {
+          for (var season in seasonData.sublist(0, seasonData.length - 1)) {
             final seasonEpisodes = await _getEpisodes(movie.id, season.id);
             allEpisodes.addAll(seasonEpisodes);
           }
@@ -218,23 +229,24 @@ class NetflixMirrorProvider implements StreamingProvider {
           if (!episodesBySeason.containsKey(seasonNum)) {
             episodesBySeason[seasonNum] = [];
           }
-          episodesBySeason[seasonNum]!.add(NetflixEpisode(
-            id: episode.id,
-            title: episode.t,
-            season: seasonNum,
-            episode: episode.ep.replaceAll('E', ''),
-            thumbnail: 'https://imgcdn.media/epimg/150/${episode.id}.jpg',
-          ));
+          episodesBySeason[seasonNum]!.add(
+            NetflixEpisode(
+              id: episode.id,
+              title: episode.t,
+              season: seasonNum,
+              episode: episode.ep.replaceAll('E', ''),
+              thumbnail: 'https://imgcdn.media/epimg/150/${episode.id}.jpg',
+            ),
+          );
         }
 
         episodesBySeason.forEach((seasonNum, episodes) {
-          seasons.add(NetflixSeason(
-            season: seasonNum,
-            episodes: episodes,
-          ));
+          seasons.add(NetflixSeason(season: seasonNum, episodes: episodes));
         });
 
-        seasons.sort((a, b) => int.parse(a.season).compareTo(int.parse(b.season)));
+        seasons.sort(
+          (a, b) => int.parse(a.season).compareTo(int.parse(b.season)),
+        );
       }
 
       return NetflixMovieDetails(
@@ -250,7 +262,9 @@ class NetflixMirrorProvider implements StreamingProvider {
         seasons: seasons,
       );
     } else {
-      throw Exception('Failed to load movie details: Status code ${response.statusCode}');
+      throw Exception(
+        'Failed to load movie details: Status code ${response.statusCode}',
+      );
     }
   }
 
@@ -264,7 +278,10 @@ class NetflixMirrorProvider implements StreamingProvider {
     return url;
   }
 
-  Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
+  Future<Map<String, dynamic>> loadLink(
+    Movie movie, {
+    NetflixEpisode? episode,
+  }) async {
     if (kDebugMode) {
       print('loadLink called');
       print('Cookie value: $_cookie');
@@ -289,7 +306,12 @@ class NetflixMirrorProvider implements StreamingProvider {
       final responseBody = response.body;
       const chunkSize = 1024;
       for (var i = 0; i < responseBody.length; i += chunkSize) {
-        final chunk = responseBody.substring(i, i + chunkSize > responseBody.length ? responseBody.length : i + chunkSize);
+        final chunk = responseBody.substring(
+          i,
+          i + chunkSize > responseBody.length
+              ? responseBody.length
+              : i + chunkSize,
+        );
         print('Response body chunk: $chunk');
       }
     }
@@ -326,7 +348,10 @@ class NetflixMirrorProvider implements StreamingProvider {
 
           // Attempt to fetch the M3U8 content directly for debugging
           try {
-            final m3u8Response = await http.get(Uri.parse(streamUrl), headers: videoHeaders);
+            final m3u8Response = await http.get(
+              Uri.parse(streamUrl),
+              headers: videoHeaders,
+            );
             if (kDebugMode) {
               print('M3U8 URL: $streamUrl');
               print('M3U8 Response Status: ${m3u8Response.statusCode}');
@@ -341,7 +366,8 @@ class NetflixMirrorProvider implements StreamingProvider {
         }
       }
 
-      final subtitleUrl = 'http://subs.nfmirrorcdn.top/files/${movie.id}/${movie.id}-en.[CC].srt';
+      final subtitleUrl =
+          'http://subs.nfmirrorcdn.top/files/${movie.id}/${movie.id}-en.[CC].srt';
       try {
         final subtitleResponse = await http.head(Uri.parse(subtitleUrl));
         if (subtitleResponse.statusCode == 200) {
@@ -359,19 +385,19 @@ class NetflixMirrorProvider implements StreamingProvider {
           print('No subtitles found: $e');
         }
       }
-      return {
-        'streams': videoStreams,
-        'subtitles': subtitles,
-      };
+      return {'streams': videoStreams, 'subtitles': subtitles};
     } else {
-      throw Exception('Failed to load link: Status code ${response.statusCode}');
+      throw Exception(
+        'Failed to load link: Status code ${response.statusCode}',
+      );
     }
   }
 
   @override
   Future<List<Movie>> search(String query) async {
     await bypass();
-    final url = '$_baseUrl/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url =
+        '$_baseUrl/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -415,9 +441,7 @@ class _Season {
   _Season({required this.id});
 
   factory _Season.fromJson(Map<String, dynamic> json) {
-    return _Season(
-      id: json['id'],
-    );
+    return _Season(id: json['id']);
   }
 }
 
@@ -460,8 +484,12 @@ class _PlayListItem {
 
   factory _PlayListItem.fromJson(Map<String, dynamic> json) {
     return _PlayListItem(
-      sources: (json['sources'] as List).map((e) => _Source.fromJson(e)).toList(),
-      tracks: (json['tracks'] as List?)?.map((e) => _Track.fromJson(e)).toList(),
+      sources: (json['sources'] as List)
+          .map((e) => _Source.fromJson(e))
+          .toList(),
+      tracks: (json['tracks'] as List?)
+          ?.map((e) => _Track.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -473,10 +501,7 @@ class _Track {
   _Track({required this.file, this.kind});
 
   factory _Track.fromJson(Map<String, dynamic> json) {
-    return _Track(
-      file: json['file'],
-      kind: json['kind'] as String?,
-    );
+    return _Track(file: json['file'], kind: json['kind'] as String?);
   }
 }
 
@@ -501,13 +526,14 @@ class _Episode {
   final String s;
   final String t;
   final String time;
-  _Episode(
-      {required this.complate,
-      required this.ep,
-      required this.id,
-      required this.s,
-      required this.t,
-      required this.time});
+  _Episode({
+    required this.complate,
+    required this.ep,
+    required this.id,
+    required this.s,
+    required this.t,
+    required this.time,
+  });
   factory _Episode.fromJson(Map<String, dynamic> json) {
     return _Episode(
       complate: json['complate'],
@@ -537,22 +563,23 @@ class _PostData {
   final String? runtime;
   final List<dynamic>? suggest;
 
-  _PostData(
-      {this.desc,
-      this.director,
-      this.ua,
-      required this.episodes,
-      this.genre,
-      this.nextPage,
-      this.nextPageSeason,
-      this.nextPageShow,
-      this.season,
-      required this.title,
-      required this.year,
-      this.cast,
-      this.match,
-      this.runtime,
-      this.suggest});
+  _PostData({
+    this.desc,
+    this.director,
+    this.ua,
+    required this.episodes,
+    this.genre,
+    this.nextPage,
+    this.nextPageSeason,
+    this.nextPageShow,
+    this.season,
+    required this.title,
+    required this.year,
+    this.cast,
+    this.match,
+    this.runtime,
+    this.suggest,
+  });
 
   factory _PostData.fromJson(Map<String, dynamic> json) {
     return _PostData(

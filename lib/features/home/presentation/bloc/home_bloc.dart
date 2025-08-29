@@ -40,15 +40,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           final topRatedMovies = await movieApiService.getTopRatedMovies();
           final nowPlayingMovies = await movieApiService.getNowPlayingMovies();
           final upcomingMovies = await movieApiService.getUpcomingMovies();
-          emit(HomeLoaded(
-            movies: {
-              'Popular': popularMovies,
-              'Top Rated': topRatedMovies,
-              'Now Playing': nowPlayingMovies,
-              'Upcoming': upcomingMovies,
-            },
-            selectedProvider: 'TMDB',
-          ));
+          emit(
+            HomeLoaded(
+              movies: {
+                'Popular': popularMovies,
+                'Top Rated': topRatedMovies,
+                'Now Playing': nowPlayingMovies,
+                'Upcoming': upcomingMovies,
+              },
+              selectedProvider: 'TMDB',
+            ),
+          );
         }
       } catch (e) {
         emit(HomeError(e.toString()));

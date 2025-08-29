@@ -7,7 +7,9 @@ import 'package:netframes/features/settings/presentation/bloc/theme_state.dart';
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final ThemeService _themeService;
 
-  ThemeBloc({required ThemeService themeService}) : _themeService = themeService, super(const ThemeInitial(ThemeMode.dark, Colors.deepPurple)) {
+  ThemeBloc({required ThemeService themeService})
+    : _themeService = themeService,
+      super(const ThemeInitial(ThemeMode.dark, Colors.deepPurple)) {
     on<LoadTheme>((event, emit) async {
       try {
         final themeMode = await _themeService.getThemeMode();

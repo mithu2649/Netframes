@@ -46,6 +46,8 @@ dependencies:
   html: ^0.15.6
   better_player: ^0.0.84
   path_provider: ^2.1.5
+  flutter_vlc_player: ^7.4.3
+  screen_brightness: ^2.1.7
 
 dev_dependencies:
   flutter_test:

@@ -11,10 +11,12 @@ class TvShowsBloc extends Bloc<TvShowsEvent, TvShowsState> {
       try {
         final popularTvShows = await movieApiService.getPopularTvShows();
         final topRatedTvShows = await movieApiService.getTopRatedTvShows();
-        emit(TvShowsLoaded(
-          popularTvShows: popularTvShows,
-          topRatedTvShows: topRatedTvShows,
-        ));
+        emit(
+          TvShowsLoaded(
+            popularTvShows: popularTvShows,
+            topRatedTvShows: topRatedTvShows,
+          ),
+        );
       } catch (e) {
         emit(TvShowsError(e.toString()));
       }

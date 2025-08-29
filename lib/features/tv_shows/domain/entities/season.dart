@@ -22,12 +22,12 @@ class Season extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        overview,
-        posterPath,
-        seasonNumber,
-        episodeCount,
-        episodes,
-      ];
+    id,
+    name,
+    overview,
+    posterPath,
+    seasonNumber,
+    episodeCount,
+    episodes,
+  ];
 }

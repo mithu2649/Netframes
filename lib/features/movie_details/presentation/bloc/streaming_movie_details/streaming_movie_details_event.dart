@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 

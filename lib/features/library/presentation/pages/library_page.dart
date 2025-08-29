@@ -18,9 +18,7 @@ class LibraryPage extends StatelessWidget {
         movieApiService: MovieApiService(),
       )..add(FetchWatchlist()),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Library'),
-        ),
+        appBar: AppBar(title: const Text('Library')),
         body: BlocBuilder<LibraryBloc, LibraryState>(
           builder: (context, state) {
             if (state is LibraryLoading) {

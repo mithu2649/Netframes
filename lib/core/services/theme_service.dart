@@ -8,7 +8,8 @@ class ThemeService {
   Future<ThemeMode> getThemeMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final themeModeIndex = prefs.getInt(_themeModeKey) ?? ThemeMode.dark.index;
+      final themeModeIndex =
+          prefs.getInt(_themeModeKey) ?? ThemeMode.dark.index;
       return ThemeMode.values[themeModeIndex];
     } catch (e) {
       return ThemeMode.dark; // Fallback to default
@@ -27,7 +28,8 @@ class ThemeService {
   Future<Color> getAccentColor() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final accentColorValue = prefs.getInt(_accentColorKey) ?? Colors.deepPurple.value;
+      final accentColorValue =
+          prefs.getInt(_accentColorKey) ?? Colors.deepPurple.value;
       return Color(accentColorValue);
     } catch (e) {
       return Colors.deepPurple; // Fallback to default

@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:better_player/better_player.dart';
 import 'package:flutter/foundation.dart';
@@ -17,9 +16,7 @@ class JioHotstarProvider implements StreamingProvider {
   static const String _cookieKey = 'jio_hotstar_cookie';
   static const String _cookieTimestampKey = 'jio_hotstar_cookie_timestamp';
 
-  final Map<String, String> _headers = {
-    'X-Requested-With': 'XMLHttpRequest',
-  };
+  final Map<String, String> _headers = {'X-Requested-With': 'XMLHttpRequest'};
 
   @override
   Future<void> clearCache() async {
@@ -53,11 +50,13 @@ class JioHotstarProvider implements StreamingProvider {
     int retries = 0;
     while (retries < 5) {
       try {
-        final response = await http
-            .post(Uri.parse('$_baseUrl/tv/p.php'), headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Referer': '$_baseUrl/tv/home',
-        });
+        final response = await http.post(
+          Uri.parse('$_baseUrl/tv/p.php'),
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': '$_baseUrl/tv/home',
+          },
+        );
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           if (data['r'] == 'n') {
@@ -66,7 +65,8 @@ class JioHotstarProvider implements StreamingProvider {
               print('Raw cookie from bypass: $rawCookie');
             }
             final cookieValue =
-                RegExp(r't_hash_t=([^;]+)').firstMatch(rawCookie)?.group(1) ?? '';
+                RegExp(r't_hash_t=([^;]+)').firstMatch(rawCookie)?.group(1) ??
+                '';
             newCookieValue = cookieValue;
             break;
           }
@@ -105,11 +105,16 @@ class JioHotstarProvider implements StreamingProvider {
   @override
   Future<Map<String, List<Movie>>> getHomePage() async {
     await bypass();
-    final response = await http.get(Uri.parse('$_baseUrl/mobile/home'), headers: _apiHeaders);
+    final response = await http.get(
+      Uri.parse('$_baseUrl/mobile/home'),
+      headers: _apiHeaders,
+    );
 
     if (response.statusCode == 200) {
       if (kDebugMode) {
-        print('JioHotstarProvider: getHomePage: response body: ${response.body}');
+        print(
+          'JioHotstarProvider: getHomePage: response body: ${response.body}',
+        );
       }
       final document = parser.parse(response.body);
       final Map<String, List<Movie>> homePageData = {};
@@ -123,16 +128,20 @@ class JioHotstarProvider implements StreamingProvider {
         final movies = <Movie>[];
         final movieElements = row.querySelectorAll('article, .top10-post');
         if (kDebugMode) {
-          print('JioHotstarProvider: getHomePage: movie elements found for "$title": ${movieElements.length}');
+          print(
+            'JioHotstarProvider: getHomePage: movie elements found for "$title": ${movieElements.length}',
+          );
         }
         for (var movieElement in movieElements) {
           final anchorElement = movieElement.querySelector('a');
-          final id = anchorElement?.attributes['data-post'] ?? movieElement.attributes['data-post'];
+          final id =
+              anchorElement?.attributes['data-post'] ??
+              movieElement.attributes['data-post'];
           if (id != null) {
             movies.add(
               Movie(
                 id: id,
-                title: '', 
+                title: '',
                 overview: '',
                 posterPath: 'https://imgcdn.media/hs/v/${int.tryParse(id)}.jpg',
                 backdropPath: '',
@@ -178,7 +187,8 @@ class JioHotstarProvider implements StreamingProvider {
   @override
   Future<NetflixMovieDetails> getMovieDetails(Movie movie) async {
     await bypass();
-    final url = '$_baseUrl/mobile/hs/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url =
+        '$_baseUrl/mobile/hs/post.php?id=${movie.id}&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -191,17 +201,19 @@ class JioHotstarProvider implements StreamingProvider {
 
       if (postData.episodes.isEmpty || postData.episodes.first == null) {
         // It's a movie
-        seasons.add(NetflixSeason(
-          season: '1',
-          episodes: [
-            NetflixEpisode(
-              id: movie.id.toString(),
-              title: postData.title,
-              season: '1',
-              episode: '1',
-            )
-          ],
-        ));
+        seasons.add(
+          NetflixSeason(
+            season: '1',
+            episodes: [
+              NetflixEpisode(
+                id: movie.id.toString(),
+                title: postData.title,
+                season: '1',
+                episode: '1',
+              ),
+            ],
+          ),
+        );
       } else {
         // It's a TV Show
         final allEpisodes = <_Episode>[];
@@ -236,25 +248,26 @@ class JioHotstarProvider implements StreamingProvider {
           if (!episodesBySeason.containsKey(seasonNum)) {
             episodesBySeason[seasonNum] = [];
           }
-          episodesBySeason[seasonNum]!.add(NetflixEpisode(
-            id: episode.id,
-            title: episode.t,
-            season: seasonNum,
-            episode: episode.ep.replaceAll('E', ''),
-            thumbnail: 'https://imgcdn.media/hsepimg/150/${episode.id}.jpg',
-          ));
+          episodesBySeason[seasonNum]!.add(
+            NetflixEpisode(
+              id: episode.id,
+              title: episode.t,
+              season: seasonNum,
+              episode: episode.ep.replaceAll('E', ''),
+              thumbnail: 'https://imgcdn.media/hsepimg/150/${episode.id}.jpg',
+            ),
+          );
         }
 
         // Create NetflixSeason objects
         episodesBySeason.forEach((seasonNum, episodes) {
-          seasons.add(NetflixSeason(
-            season: seasonNum,
-            episodes: episodes,
-          ));
+          seasons.add(NetflixSeason(season: seasonNum, episodes: episodes));
         });
 
         // Sort seasons
-        seasons.sort((a, b) => int.parse(a.season).compareTo(int.parse(b.season)));
+        seasons.sort(
+          (a, b) => int.parse(a.season).compareTo(int.parse(b.season)),
+        );
       }
 
       return NetflixMovieDetails(
@@ -270,7 +283,9 @@ class JioHotstarProvider implements StreamingProvider {
         seasons: seasons,
       );
     } else {
-      throw Exception('Failed to load movie details: Status code ${response.statusCode}');
+      throw Exception(
+        'Failed to load movie details: Status code ${response.statusCode}',
+      );
     }
   }
 
@@ -285,7 +300,10 @@ class JioHotstarProvider implements StreamingProvider {
   }
 
   @override
-  Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
+  Future<Map<String, dynamic>> loadLink(
+    Movie movie, {
+    NetflixEpisode? episode,
+  }) async {
     if (kDebugMode) {
       print('loadLink called');
       print('Cookie value: $_cookie');
@@ -295,10 +313,7 @@ class JioHotstarProvider implements StreamingProvider {
     // final h = _cookie;
     final url =
         '$playerBaseUrl/mobile/hs/playlist.php?id=${movie.id}&t=${movie.title}&tm=${DateTime.now().millisecondsSinceEpoch}';
-    final headers = {
-      ..._apiHeaders,
-      'Referer': '$playerBaseUrl/tv/home',
-    };
+    final headers = {..._apiHeaders, 'Referer': '$playerBaseUrl/tv/home'};
     if (kDebugMode) {
       print('Loading link from: $url');
       print('Headers: $headers');
@@ -310,7 +325,12 @@ class JioHotstarProvider implements StreamingProvider {
       final responseBody = response.body;
       const chunkSize = 1024;
       for (var i = 0; i < responseBody.length; i += chunkSize) {
-        final chunk = responseBody.substring(i, i + chunkSize > responseBody.length ? responseBody.length : i + chunkSize);
+        final chunk = responseBody.substring(
+          i,
+          i + chunkSize > responseBody.length
+              ? responseBody.length
+              : i + chunkSize,
+        );
         print('Response body chunk: $chunk');
       }
     }
@@ -345,7 +365,10 @@ class JioHotstarProvider implements StreamingProvider {
 
           // Attempt to fetch the M3U8 content directly for debugging
           try {
-            final m3u8Response = await http.get(Uri.parse(streamUrl), headers: videoHeaders);
+            final m3u8Response = await http.get(
+              Uri.parse(streamUrl),
+              headers: videoHeaders,
+            );
             if (kDebugMode) {
               print('M3U8 URL: $streamUrl');
               print('M3U8 Response Status: ${m3u8Response.statusCode}');
@@ -360,19 +383,19 @@ class JioHotstarProvider implements StreamingProvider {
         }
       }
 
-      return {
-        'streams': videoStreams,
-        'subtitles': subtitles,
-      };
+      return {'streams': videoStreams, 'subtitles': subtitles};
     } else {
-      throw Exception('Failed to load link: Status code ${response.statusCode}');
+      throw Exception(
+        'Failed to load link: Status code ${response.statusCode}',
+      );
     }
   }
 
   @override
   Future<List<Movie>> search(String query) async {
     await bypass();
-    final url = '$_baseUrl/mobile/hs/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
+    final url =
+        '$_baseUrl/mobile/hs/search.php?s=$query&t=${DateTime.now().millisecondsSinceEpoch}';
     final response = await http.get(Uri.parse(url), headers: _apiHeaders);
 
     if (response.statusCode == 200) {
@@ -416,9 +439,7 @@ class _Season {
   _Season({required this.id});
 
   factory _Season.fromJson(Map<String, dynamic> json) {
-    return _Season(
-      id: json['id'],
-    );
+    return _Season(id: json['id']);
   }
 }
 
@@ -461,8 +482,12 @@ class _PlayListItem {
 
   factory _PlayListItem.fromJson(Map<String, dynamic> json) {
     return _PlayListItem(
-      sources: (json['sources'] as List).map((e) => _Source.fromJson(e)).toList(),
-      tracks: (json['tracks'] as List?)?.map((e) => _Track.fromJson(e)).toList(),
+      sources: (json['sources'] as List)
+          .map((e) => _Source.fromJson(e))
+          .toList(),
+      tracks: (json['tracks'] as List?)
+          ?.map((e) => _Track.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -474,10 +499,7 @@ class _Track {
   _Track({required this.file, this.kind});
 
   factory _Track.fromJson(Map<String, dynamic> json) {
-    return _Track(
-      file: json['file'],
-      kind: json['kind'] as String?,
-    );
+    return _Track(file: json['file'], kind: json['kind'] as String?);
   }
 }
 
@@ -502,13 +524,14 @@ class _Episode {
   final String s;
   final String t;
   final String time;
-  _Episode(
-      {required this.complate,
-      required this.ep,
-      required this.id,
-      required this.s,
-      required this.t,
-      required this.time});
+  _Episode({
+    required this.complate,
+    required this.ep,
+    required this.id,
+    required this.s,
+    required this.t,
+    required this.time,
+  });
   factory _Episode.fromJson(Map<String, dynamic> json) {
     return _Episode(
       complate: json['complate'],
@@ -538,22 +561,23 @@ class _PostData {
   final String? runtime;
   final List<dynamic>? suggest;
 
-  _PostData(
-      {this.desc,
-      this.director,
-      this.ua,
-      required this.episodes,
-      this.genre,
-      this.nextPage,
-      this.nextPageSeason,
-      this.nextPageShow,
-      this.season,
-      required this.title,
-      required this.year,
-      this.cast,
-      this.match,
-      this.runtime,
-      this.suggest});
+  _PostData({
+    this.desc,
+    this.director,
+    this.ua,
+    required this.episodes,
+    this.genre,
+    this.nextPage,
+    this.nextPageSeason,
+    this.nextPageShow,
+    this.season,
+    required this.title,
+    required this.year,
+    this.cast,
+    this.match,
+    this.runtime,
+    this.suggest,
+  });
 
   factory _PostData.fromJson(Map<String, dynamic> json) {
     return _PostData(

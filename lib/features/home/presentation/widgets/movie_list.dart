@@ -16,10 +16,7 @@ class MovieList extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
         ),
         SizedBox(
           height: 200,
@@ -35,7 +32,10 @@ class MovieList extends StatelessWidget {
                     verticalOffset: 50.0,
                     child: FadeInAnimation(
                       child: MovieCard(
-                          movie: movies[index], index: index, categoryTitle: title),
+                        movie: movies[index],
+                        index: index,
+                        categoryTitle: title,
+                      ),
                     ),
                   ),
                 );

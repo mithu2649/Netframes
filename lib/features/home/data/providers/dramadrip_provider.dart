@@ -15,9 +15,7 @@ class DomainsParser {
   DomainsParser({this.dramadrip});
 
   factory DomainsParser.fromJson(Map<String, dynamic> json) {
-    return DomainsParser(
-      dramadrip: json['dramadrip'],
-    );
+    return DomainsParser(dramadrip: json['dramadrip']);
   }
 }
 
@@ -76,11 +74,13 @@ class Video {
 class DramaDripProvider implements StreamingProvider {
   String _baseUrl = "https://dramadrip.com";
   final String _cinemetaUrl = "https://v3-cinemeta.strem.io/meta";
-  static const String _domainsUrl = "https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/domains.json";
+  static const String _domainsUrl =
+      "https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/domains.json";
   static DomainsParser? _cachedDomains;
 
   final Map<String, String> _headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
   };
 
   Future<void> _updateDomain() async {
@@ -97,7 +97,7 @@ class DramaDripProvider implements StreamingProvider {
         // ignore
       }
     } else {
-       if (_cachedDomains?.dramadrip != null) {
+      if (_cachedDomains?.dramadrip != null) {
         _baseUrl = _cachedDomains!.dramadrip!;
       }
     }
@@ -118,12 +118,18 @@ class DramaDripProvider implements StreamingProvider {
 
       String? posterUrl;
       if (srcset != null && srcset.isNotEmpty) {
-        posterUrl = srcset.split(",\n").map((e) => e.trim().split(" ").first).last;
+        posterUrl = srcset
+            .split(",\n")
+            .map((e) => e.trim().split(" ").first)
+            .last;
       } else {
         posterUrl = imgElement?.attributes["src"];
       }
 
-      if (title != null && title.isNotEmpty && href != null && href.isNotEmpty) {
+      if (title != null &&
+          title.isNotEmpty &&
+          href != null &&
+          href.isNotEmpty) {
         return Movie(
           id: href,
           title: title,
@@ -155,11 +161,16 @@ class DramaDripProvider implements StreamingProvider {
     for (var category in categories.entries) {
       final url = '$_baseUrl/${category.value}';
       try {
-        final response = await http.get(Uri.parse(url), headers: _headers).timeout(const Duration(seconds: 15));
+        final response = await http
+            .get(Uri.parse(url), headers: _headers)
+            .timeout(const Duration(seconds: 15));
         if (response.statusCode == 200) {
           final document = parser.parse(response.body);
           final movieElements = document.querySelectorAll("article");
-          final movies = movieElements.map(_toMovie).whereType<Movie>().toList();
+          final movies = movieElements
+              .map(_toMovie)
+              .whereType<Movie>()
+              .toList();
           homePageData[category.key] = movies;
         }
       } catch (e) {
@@ -174,7 +185,9 @@ class DramaDripProvider implements StreamingProvider {
     await _updateDomain();
     final url = '$_baseUrl/?s=${Uri.encodeComponent(query)}';
     try {
-      final response = await http.get(Uri.parse(url), headers: _headers).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
         final movieElements = document.querySelectorAll("article");
@@ -197,38 +210,71 @@ class DramaDripProvider implements StreamingProvider {
     String? tmdbId;
     String? tmdbType;
 
-    document.querySelectorAll("div.su-spoiler-content ul.wp-block-list > li").forEach((li) {
-      final text = li.text;
-      if (imdbId == null && text.contains("imdb.com/title/tt")) {
-        imdbId = RegExp(r'tt\d+').firstMatch(text)?.group(0);
-      }
+    document
+        .querySelectorAll("div.su-spoiler-content ul.wp-block-list > li")
+        .forEach((li) {
+          final text = li.text;
+          if (imdbId == null && text.contains("imdb.com/title/tt")) {
+            imdbId = RegExp(r'tt\d+').firstMatch(text)?.group(0);
+          }
 
-      if (tmdbId == null && tmdbType == null && text.contains("themoviedb.org")) {
-        final match = RegExp(r'/(movie|tv)/(\d+)').firstMatch(text);
-        if (match != null) {
-          tmdbType = match.group(1);
-          tmdbId = match.group(2);
-        }
-      }
-    });
+          if (tmdbId == null &&
+              tmdbType == null &&
+              text.contains("themoviedb.org")) {
+            final match = RegExp(r'/(movie|tv)/(\d+)').firstMatch(text);
+            if (match != null) {
+              tmdbType = match.group(1);
+              tmdbId = match.group(2);
+            }
+          }
+        });
 
     final tvType = (tmdbType?.toLowerCase().contains("movie") == true)
         ? NetflixContentType.movie
         : NetflixContentType.tvShow;
 
-    final image = document.querySelector("meta[property='og:image']")?.attributes['content'] ?? '';
-    final title = document.querySelector("div.wp-block-column > h2.wp-block-heading")?.text.split("(").first.trim() ?? movie.title;
-    final tags = document.querySelectorAll("div.mt-2 span.badge").map((e) => e.text).toList();
-    final year = document.querySelector("div.wp-block-column > h2.wp-block-heading")?.text.contains("(") == true
-        ? document.querySelector("div.wp-block-column > h2.wp-block-heading")!.text.split("(")[1].replaceAll(")", "").trim()
+    final image =
+        document
+            .querySelector("meta[property='og:image']")
+            ?.attributes['content'] ??
+        '';
+    final title =
+        document
+            .querySelector("div.wp-block-column > h2.wp-block-heading")
+            ?.text
+            .split("(")
+            .first
+            .trim() ??
+        movie.title;
+    final tags = document
+        .querySelectorAll("div.mt-2 span.badge")
+        .map((e) => e.text)
+        .toList();
+    final year =
+        document
+                .querySelector("div.wp-block-column > h2.wp-block-heading")
+                ?.text
+                .contains("(") ==
+            true
+        ? document
+              .querySelector("div.wp-block-column > h2.wp-block-heading")!
+              .text
+              .split("(")[1]
+              .replaceAll(")", "")
+              .trim()
         : '';
-    final descriptions = document.querySelector("div.content-section p.mt-4")?.text.trim() ?? '';
+    final descriptions =
+        document.querySelector("div.content-section p.mt-4")?.text.trim() ?? '';
     final typeset = tvType == NetflixContentType.tvShow ? "series" : "movie";
-    
+
     ResponseData? responseData;
     if (imdbId != null && imdbId!.isNotEmpty) {
-      final jsonResponse = await http.get(Uri.parse("$_cinemetaUrl/$typeset/$imdbId.json"));
-      if (jsonResponse.statusCode == 200 && jsonResponse.body.isNotEmpty && jsonResponse.body.startsWith("{")) {
+      final jsonResponse = await http.get(
+        Uri.parse("$_cinemetaUrl/$typeset/$imdbId.json"),
+      );
+      if (jsonResponse.statusCode == 200 &&
+          jsonResponse.body.isNotEmpty &&
+          jsonResponse.body.startsWith("{")) {
         responseData = ResponseData.fromJson(jsonDecode(jsonResponse.body));
       }
     }
@@ -237,25 +283,31 @@ class DramaDripProvider implements StreamingProvider {
     final cast = responseData?.meta?.cast ?? [];
     final background = responseData?.meta?.background ?? image;
 
-    final trailer = document.querySelector("div.wp-block-embed__wrapper > iframe")?.attributes['src'];
+    final trailer = document
+        .querySelector("div.wp-block-embed__wrapper > iframe")
+        ?.attributes['src'];
 
-    final recommendations = document.querySelectorAll("div.entry-related-inner-content article").map((it) {
-      final recName = it.querySelector("h3")?.text.substring(8);
-      final recHref = it.querySelector("h3 a")?.attributes['href'];
-      final recPosterUrl = it.querySelector("img")?.attributes['src'];
-      if(recName != null && recHref != null) {
-        return Movie(
-          id: recHref,
-          title: recName,
-          posterPath: recPosterUrl ?? '',
-          provider: 'DramaDrip',
-          overview: '',
-          backdropPath: '',
-          voteAverage: 0.0,
-        );
-      }
-      return null;
-    }).whereType<Movie>().toList();
+    final recommendations = document
+        .querySelectorAll("div.entry-related-inner-content article")
+        .map((it) {
+          final recName = it.querySelector("h3")?.text.substring(8);
+          final recHref = it.querySelector("h3 a")?.attributes['href'];
+          final recPosterUrl = it.querySelector("img")?.attributes['src'];
+          if (recName != null && recHref != null) {
+            return Movie(
+              id: recHref,
+              title: recName,
+              posterPath: recPosterUrl ?? '',
+              provider: 'DramaDrip',
+              overview: '',
+              backdropPath: '',
+              voteAverage: 0.0,
+            );
+          }
+          return null;
+        })
+        .whereType<Movie>()
+        .toList();
 
     if (tvType == NetflixContentType.tvShow) {
       final Map<int, Map<int, List<String>>> episodesBySeason = {};
@@ -265,31 +317,59 @@ class DramaDripProvider implements StreamingProvider {
         final seasonText = seasonHeader.text;
         if (seasonText.toLowerCase().contains("zip")) continue;
 
-        final seasonMatch = RegExp(r'S?e?a?s?o?n?\s*([0-9]+)', caseSensitive: false).firstMatch(seasonText);
+        final seasonMatch = RegExp(
+          r'S?e?a?s?o?n?\s*([0-9]+)',
+          caseSensitive: false,
+        ).firstMatch(seasonText);
         final seasonNum = int.tryParse(seasonMatch?.group(1) ?? '');
 
         if (seasonNum != null) {
           var linksBlock = seasonHeader.nextElementSibling;
-          if (linksBlock == null || linksBlock.querySelectorAll("div.wp-block-button").isEmpty) {
-            linksBlock = seasonHeader.parent?.querySelector("div.wp-block-button");
+          if (linksBlock == null ||
+              linksBlock.querySelectorAll("div.wp-block-button").isEmpty) {
+            linksBlock = seasonHeader.parent?.querySelector(
+              "div.wp-block-button",
+            );
           }
 
-          final qualityLinks = linksBlock?.querySelectorAll("a").map((e) => e.attributes['href']).whereType<String>().where((href) => href != "#").toList() ?? [];
+          final qualityLinks =
+              linksBlock
+                  ?.querySelectorAll("a")
+                  .map((e) => e.attributes['href'])
+                  .whereType<String>()
+                  .where((href) => href != "#")
+                  .toList() ??
+              [];
 
           for (var qualityLink in qualityLinks) {
             try {
-              final qualityResponse = await http.get(Uri.parse(qualityLink), headers: _headers);
+              final qualityResponse = await http.get(
+                Uri.parse(qualityLink),
+                headers: _headers,
+              );
               final episodeDoc = parser.parse(qualityResponse.body);
-              final episodeButtons = episodeDoc.querySelectorAll("a").where((el) =>
-                  RegExp(r'(Episode|Ep|E)?\s*0*\d+', caseSensitive: false).hasMatch(el.text));
+              final episodeButtons = episodeDoc
+                  .querySelectorAll("a")
+                  .where(
+                    (el) => RegExp(
+                      r'(Episode|Ep|E)?\s*0*\d+',
+                      caseSensitive: false,
+                    ).hasMatch(el.text),
+                  );
 
               for (var btn in episodeButtons) {
                 final epHref = btn.attributes['href'];
                 final epText = btn.text;
-                final epMatch = RegExp(r'(?:Episode|Ep|E)?\s*0*([0-9]+)', caseSensitive: false).firstMatch(epText);
+                final epMatch = RegExp(
+                  r'(?:Episode|Ep|E)?\s*0*([0-9]+)',
+                  caseSensitive: false,
+                ).firstMatch(epText);
                 final epNum = int.tryParse(epMatch?.group(1) ?? '');
 
-                if (epNum != null && epHref != null && epHref.isNotEmpty && epHref != "#") {
+                if (epNum != null &&
+                    epHref != null &&
+                    epHref.isNotEmpty &&
+                    epHref != "#") {
                   episodesBySeason.putIfAbsent(seasonNum, () => {});
                   episodesBySeason[seasonNum]!.putIfAbsent(epNum, () => []);
                   if (!episodesBySeason[seasonNum]![epNum]!.contains(epHref)) {
@@ -308,20 +388,31 @@ class DramaDripProvider implements StreamingProvider {
       episodesBySeason.forEach((seasonNum, episodesMap) {
         final episodes = <NetflixEpisode>[];
         episodesMap.forEach((epNum, links) {
-          final info = responseData?.meta?.videos?.firstWhere((v) => v.season == seasonNum && v.episode == epNum, orElse: () => Video());
-          episodes.add(NetflixEpisode(
-            id: jsonEncode(links.toSet().toList()),
-            title: info?.name ?? 'Episode $epNum',
-            season: seasonNum.toString(),
-            episode: epNum.toString(),
-            thumbnail: info?.thumbnail,
-            description: info?.overview,
-          ));
+          final info = responseData?.meta?.videos?.firstWhere(
+            (v) => v.season == seasonNum && v.episode == epNum,
+            orElse: () => Video(),
+          );
+          episodes.add(
+            NetflixEpisode(
+              id: jsonEncode(links.toSet().toList()),
+              title: info?.name ?? 'Episode $epNum',
+              season: seasonNum.toString(),
+              episode: epNum.toString(),
+              thumbnail: info?.thumbnail,
+              description: info?.overview,
+            ),
+          );
         });
-        episodes.sort((a, b) => int.parse(a.episode).compareTo(int.parse(b.episode)));
-        seasons.add(NetflixSeason(season: seasonNum.toString(), episodes: episodes));
+        episodes.sort(
+          (a, b) => int.parse(a.episode).compareTo(int.parse(b.episode)),
+        );
+        seasons.add(
+          NetflixSeason(season: seasonNum.toString(), episodes: episodes),
+        );
       });
-      seasons.sort((a, b) => int.parse(a.season).compareTo(int.parse(b.season)));
+      seasons.sort(
+        (a, b) => int.parse(a.season).compareTo(int.parse(b.season)),
+      );
 
       return NetflixMovieDetails(
         title: title,
@@ -345,7 +436,11 @@ class DramaDripProvider implements StreamingProvider {
           try {
             final pageRes = await http.get(Uri.parse(link), headers: _headers);
             final pageDoc = parser.parse(pageRes.body);
-            final finalLinks = pageDoc.querySelectorAll("div.wp-block-button.movie_btn a").map((e) => e.attributes['href']).whereType<String>().where((href) => href != "#");
+            final finalLinks = pageDoc
+                .querySelectorAll("div.wp-block-button.movie_btn a")
+                .map((e) => e.attributes['href'])
+                .whereType<String>()
+                .where((href) => href != "#");
             movieLinks.addAll(finalLinks);
           } catch (e) {
             // ignore
@@ -355,9 +450,19 @@ class DramaDripProvider implements StreamingProvider {
 
       final seasons = <NetflixSeason>[];
       if (movieLinks.isNotEmpty) {
-        seasons.add(NetflixSeason(season: "1", episodes: [
-          NetflixEpisode(id: jsonEncode(movieLinks), title: title, season: "1", episode: "1")
-        ]));
+        seasons.add(
+          NetflixSeason(
+            season: "1",
+            episodes: [
+              NetflixEpisode(
+                id: jsonEncode(movieLinks),
+                title: title,
+                season: "1",
+                episode: "1",
+              ),
+            ],
+          ),
+        );
       }
 
       return NetflixMovieDetails(
@@ -389,17 +494,28 @@ class DramaDripProvider implements StreamingProvider {
       if (encodedLink.isEmpty) return null;
 
       final decodedUrl = _base64Decode(encodedLink);
-      final docRes = await http.get(Uri.parse(decodedUrl), headers: _headers).timeout(const Duration(seconds: 10));
+      final docRes = await http
+          .get(Uri.parse(decodedUrl), headers: _headers)
+          .timeout(const Duration(seconds: 10));
       final doc = parser.parse(docRes.body);
-      final goValue = doc.querySelector("form#landing input[name=go]")?.attributes['value'];
+      final goValue = doc
+          .querySelector("form#landing input[name=go]")
+          ?.attributes['value'];
       if (goValue == null || goValue.isEmpty) return null;
 
       final decodedGoUrl = _base64Decode(goValue).replaceAll("&#038;", "&");
-      final responseDocRes = await http.get(Uri.parse(decodedGoUrl), headers: _headers).timeout(const Duration(seconds: 10));
+      final responseDocRes = await http
+          .get(Uri.parse(decodedGoUrl), headers: _headers)
+          .timeout(const Duration(seconds: 10));
       final responseDoc = parser.parse(responseDocRes.body);
-      final script = responseDoc.querySelectorAll("script").firstWhere((s) => s.innerHtml.contains("window.location.replace")).innerHtml;
-      final redirectPath = RegExp(r'window\.location\.replace\s*\(\s*["\\](.+?)["\\]\s*\)\s*;?').firstMatch(script)?.group(1);
-      
+      final script = responseDoc
+          .querySelectorAll("script")
+          .firstWhere((s) => s.innerHtml.contains("window.location.replace"))
+          .innerHtml;
+      final redirectPath = RegExp(
+        r'window\.location\.replace\s*\(\s*["\\](.+?)["\\]\s*\)\s*;?',
+      ).firstMatch(script)?.group(1);
+
       if (redirectPath == null) return null;
       if (redirectPath.startsWith("http")) return redirectPath;
 
@@ -419,8 +535,10 @@ class DramaDripProvider implements StreamingProvider {
       final response = await http.get(Uri.parse(url), headers: _headers);
       final document = parser.parse(response.body);
 
-      final qualityText = document.querySelector("li.list-group-item")?.text ?? '';
-      final quality = RegExp(r'(\d{3,4})[pP]').firstMatch(qualityText)?.group(1) ?? '720p';
+      final qualityText =
+          document.querySelector("li.list-group-item")?.text ?? '';
+      final quality =
+          RegExp(r'(\d{3,4})[pP]').firstMatch(qualityText)?.group(1) ?? '720p';
 
       final links = document.querySelectorAll("div.text-center > a");
       if (kDebugMode) {
@@ -445,42 +563,76 @@ class DramaDripProvider implements StreamingProvider {
               if (kDebugMode) {
                 print("Found resume cloud link: $streamUrl");
               }
-              streams.add(VideoStream(url: streamUrl, quality: "Resume Cloud - $quality", headers: _headers));
+              streams.add(
+                VideoStream(
+                  url: streamUrl,
+                  quality: "Resume Cloud - $quality",
+                  headers: _headers,
+                ),
+              );
             }
           } else if (text.toLowerCase().contains("instant download")) {
             final uri = Uri.parse(href);
             final host = uri.host;
             final token = href.split("url=").last;
-            final apiResponse = await http.post(Uri.parse('https://$host/api'), body: {'keys': token}, headers: {'x-token': host, ..._headers});
-            final streamUrl = jsonDecode(apiResponse.body)['url'].toString().replaceAll("\/", "/");
+            final apiResponse = await http.post(
+              Uri.parse('https://$host/api'),
+              body: {'keys': token},
+              headers: {'x-token': host, ..._headers},
+            );
+            final streamUrl = jsonDecode(
+              apiResponse.body,
+            )['url'].toString().replaceAll("\/", "/");
             if (kDebugMode) {
               print("Found instant download link: $streamUrl");
             }
-            streams.add(VideoStream(url: streamUrl, quality: quality, headers: _headers));
+            streams.add(
+              VideoStream(url: streamUrl, quality: quality, headers: _headers),
+            );
           } else if (text.toLowerCase().contains("resume worker bot")) {
-            final botResponse = await http.get(Uri.parse(href), headers: _headers);
+            final botResponse = await http.get(
+              Uri.parse(href),
+              headers: _headers,
+            );
             final docString = botResponse.body;
             final ssid = botResponse.headers['set-cookie'] ?? '';
-            final token = RegExp(r"formData\.append\('token',\s*'([a-f0-9]+)'\)").firstMatch(docString)?.group(1) ?? '';
-            final path = RegExp(r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'\)").firstMatch(docString)?.group(1) ?? '';
+            final token =
+                RegExp(
+                  r"formData\.append\('token',\s*'([a-f0-9]+)'\)",
+                ).firstMatch(docString)?.group(1) ??
+                '';
+            final path =
+                RegExp(
+                  r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'\)",
+                ).firstMatch(docString)?.group(1) ??
+                '';
             final baseUrl = href.split("/download")[0];
 
             if (token.isNotEmpty && path.isNotEmpty) {
-              final apiResponse = await http.post(Uri.parse('$baseUrl/download?id=$path'), 
+              final apiResponse = await http.post(
+                Uri.parse('$baseUrl/download?id=$path'),
                 body: {'token': token},
                 headers: {
                   'Accept': '*/*',
                   'Origin': baseUrl,
                   'Sec-Fetch-Site': 'same-origin',
                   'Cookie': ssid,
-                  ..._headers
+                  ..._headers,
                 },
               );
-              final streamUrl = jsonDecode(apiResponse.body)['url'].toString().replaceAll("\/", "/");
+              final streamUrl = jsonDecode(
+                apiResponse.body,
+              )['url'].toString().replaceAll("\/", "/");
               if (kDebugMode) {
                 print("Found resume worker bot link: $streamUrl");
               }
-              streams.add(VideoStream(url: streamUrl, quality: "Resume Worker Bot - $quality", headers: {'Cookie': ssid, ..._headers}));
+              streams.add(
+                VideoStream(
+                  url: streamUrl,
+                  quality: "Resume Worker Bot - $quality",
+                  headers: {'Cookie': ssid, ..._headers},
+                ),
+              );
             }
           }
         }
@@ -499,13 +651,22 @@ class DramaDripProvider implements StreamingProvider {
   Future<List<VideoStream>> _cfType1(String url, String quality) async {
     final streams = <VideoStream>[];
     try {
-      final response = await http.get(Uri.parse("$url?type=1"), headers: _headers);
+      final response = await http.get(
+        Uri.parse("$url?type=1"),
+        headers: _headers,
+      );
       final document = parser.parse(response.body);
       final links = document.querySelectorAll("a.btn-success");
       for (var link in links) {
         final href = link.attributes['href'];
         if (href != null && href.startsWith("http")) {
-          streams.add(VideoStream(url: href, quality: "Direct Link - $quality", headers: _headers));
+          streams.add(
+            VideoStream(
+              url: href,
+              quality: "Direct Link - $quality",
+              headers: _headers,
+            ),
+          );
         }
       }
     } catch (e) {
@@ -516,7 +677,10 @@ class DramaDripProvider implements StreamingProvider {
 
   Future<String?> _resumeCloudLink(String baseUrl, String path) async {
     try {
-      final response = await http.get(Uri.parse(baseUrl + path), headers: _headers);
+      final response = await http.get(
+        Uri.parse(baseUrl + path),
+        headers: _headers,
+      );
       final document = parser.parse(response.body);
       return document.querySelector("a.btn-success")?.attributes['href'];
     } catch (e) {
@@ -541,7 +705,11 @@ class DramaDripProvider implements StreamingProvider {
 
       if (formUrl == null) return null;
 
-      res = await http.post(Uri.parse(formUrl), headers: _headers, body: formData);
+      res = await http.post(
+        Uri.parse(formUrl),
+        headers: _headers,
+        body: formData,
+      );
       doc = parser.parse(res.body);
       form = doc.querySelector("form#landing");
       formUrl = form?.attributes['action'];
@@ -556,18 +724,28 @@ class DramaDripProvider implements StreamingProvider {
 
       if (formUrl == null) return null;
 
-      res = await http.post(Uri.parse(formUrl), headers: _headers, body: formData);
+      res = await http.post(
+        Uri.parse(formUrl),
+        headers: _headers,
+        body: formData,
+      );
       doc = parser.parse(res.body);
-      final skTokenScript = doc.querySelectorAll("script").firstWhere((script) => script.innerHtml.contains("?go="));
+      final skTokenScript = doc
+          .querySelectorAll("script")
+          .firstWhere((script) => script.innerHtml.contains("?go="));
       final skToken = skTokenScript.innerHtml.split("?go=")[1].split('"')[0];
 
       final host = Uri.parse(url).host;
-      final driveUrlRes = await http.get(Uri.parse("https://$host?go=$skToken"), headers: {
-        ..._headers,
-        'Cookie': '$skToken=${formData["_wp_http2"]}',
-      });
-      final driveUrl = parser.parse(driveUrlRes.body).querySelector("meta[http-equiv=refresh]")?.attributes['content']?.split("url=")[1];
-      
+      final driveUrlRes = await http.get(
+        Uri.parse("https://$host?go=$skToken"),
+        headers: {..._headers, 'Cookie': '$skToken=${formData["_wp_http2"]}'},
+      );
+      final driveUrl = parser
+          .parse(driveUrlRes.body)
+          .querySelector("meta[http-equiv=refresh]")
+          ?.attributes['content']
+          ?.split("url=")[1];
+
       if (driveUrl == null) return null;
 
       final pathRes = await http.get(Uri.parse(driveUrl));
@@ -583,7 +761,10 @@ class DramaDripProvider implements StreamingProvider {
   }
 
   @override
-  Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
+  Future<Map<String, dynamic>> loadLink(
+    Movie movie, {
+    NetflixEpisode? episode,
+  }) async {
     if (episode == null) return {};
 
     final List<String> links = List<String>.from(jsonDecode(episode.id));
@@ -613,7 +794,9 @@ class DramaDripProvider implements StreamingProvider {
             streams.addAll(driveseedStreams);
           } else {
             // Assume it's a direct link
-            streams.add(VideoStream(url: finalLink, quality: "720p", headers: _headers));
+            streams.add(
+              VideoStream(url: finalLink, quality: "720p", headers: _headers),
+            );
           }
         }
       } catch (e) {
@@ -624,10 +807,7 @@ class DramaDripProvider implements StreamingProvider {
     }
 
     if (streams.isNotEmpty) {
-      return {
-        'streams': streams,
-        'subtitles': <BetterPlayerSubtitlesSource>[]
-      };
+      return {'streams': streams, 'subtitles': <BetterPlayerSubtitlesSource>[]};
     }
 
     return {}; // Return empty if no links succeed

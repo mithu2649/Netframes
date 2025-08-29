@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
@@ -26,26 +25,31 @@ class StreamingMovieDetailsBloc
         print('--- FetchStreamingMovieDetails event received in Bloc ---');
       }
       print(
-          'Fetching streaming movie details for: ${event.movie.title} (ID: ${event.movie.id})');
+        'Fetching streaming movie details for: ${event.movie.title} (ID: ${event.movie.id})',
+      );
       try {
         if (event.provider == 'Netflix') {
-          final movieDetails =
-              await netflixMirrorProvider.getMovieDetails(event.movie);
+          final movieDetails = await netflixMirrorProvider.getMovieDetails(
+            event.movie,
+          );
           print('Successfully fetched Netflix movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         } else if (event.provider == 'JioHotstar') {
-          final movieDetails =
-              await jioHotstarProvider.getMovieDetails(event.movie);
+          final movieDetails = await jioHotstarProvider.getMovieDetails(
+            event.movie,
+          );
           print('Successfully fetched JioHotstar movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         } else if (event.provider == 'PrimeVideo') {
-          final movieDetails =
-              await primeVideoProvider.getMovieDetails(event.movie);
+          final movieDetails = await primeVideoProvider.getMovieDetails(
+            event.movie,
+          );
           print('Successfully fetched PrimeVideo movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         } else if (event.provider == 'DramaDrip') {
-          final movieDetails =
-              await dramaDripProvider.getMovieDetails(event.movie);
+          final movieDetails = await dramaDripProvider.getMovieDetails(
+            event.movie,
+          );
           print('Successfully fetched DramaDrip movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         }

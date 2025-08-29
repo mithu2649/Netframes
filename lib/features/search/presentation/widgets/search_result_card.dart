@@ -19,7 +19,9 @@ class SearchResultCard extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MovieDetailsPage(movie: movie)),
+              MaterialPageRoute(
+                builder: (context) => MovieDetailsPage(movie: movie),
+              ),
             );
           },
           leading: AspectRatio(
@@ -35,7 +37,11 @@ class SearchResultCard extends StatelessWidget {
             ),
           ),
           title: Text(movie.title),
-          subtitle: Text(movie.overview, maxLines: 2, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            movie.overview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       );
     } else if (result is TvShowSearchResult) {
@@ -45,7 +51,9 @@ class SearchResultCard extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TvShowDetailsPage(tvShow: tvShow)),
+              MaterialPageRoute(
+                builder: (context) => TvShowDetailsPage(tvShow: tvShow),
+              ),
             );
           },
           leading: AspectRatio(
@@ -61,7 +69,11 @@ class SearchResultCard extends StatelessWidget {
             ),
           ),
           title: Text(tvShow.name),
-          subtitle: Text(tvShow.overview, maxLines: 2, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            tvShow.overview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       );
     }

@@ -15,7 +15,9 @@ class TvShowCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => TvShowDetailsPage(tvShow: tvShow)),
+          MaterialPageRoute(
+            builder: (context) => TvShowDetailsPage(tvShow: tvShow),
+          ),
         );
       },
       child: Padding(
@@ -24,7 +26,8 @@ class TvShowCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.0),
           child: CachedNetworkImage(
             imageUrl: 'https://image.tmdb.org/t/p/w500${tvShow.posterPath}',
-            placeholder: (context, url) => ShimmerLoading(width: 100, height: 150),
+            placeholder: (context, url) =>
+                ShimmerLoading(width: 100, height: 150),
             errorWidget: (context, url, error) => const Icon(Icons.error),
           ),
         ),

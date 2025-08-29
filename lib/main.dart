@@ -26,12 +26,14 @@ void main() async {
   await jioHotstarProvider.bypass();
   await primeVideoProvider.bypass();
 
-  runApp(MyApp(
-    netflixMirrorProvider: netflixMirrorProvider,
-    jioHotstarProvider: jioHotstarProvider,
-    primeVideoProvider: primeVideoProvider,
-    dramaDripProvider: dramaDripProvider,
-  ));
+  runApp(
+    MyApp(
+      netflixMirrorProvider: netflixMirrorProvider,
+      jioHotstarProvider: jioHotstarProvider,
+      primeVideoProvider: primeVideoProvider,
+      dramaDripProvider: dramaDripProvider,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -65,9 +67,9 @@ class MyApp extends StatelessWidget {
           create: (context) => ThemeBloc(themeService: ThemeService()),
         ),
         BlocProvider(
-          create: (context) => TvShowsBloc(
-            movieApiService: MovieApiService(),
-          )..add(FetchTvShowsData()),
+          create: (context) =>
+              TvShowsBloc(movieApiService: MovieApiService())
+                ..add(FetchTvShowsData()),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
@@ -77,7 +79,9 @@ class MyApp extends StatelessWidget {
             themeMode: themeState.themeMode,
             theme: ThemeData(
               brightness: Brightness.light,
-              colorScheme: ColorScheme.fromSeed(seedColor: themeState.accentColor),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: themeState.accentColor,
+              ),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(

@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 
@@ -22,17 +21,21 @@ class NetflixEpisode extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, title, season, episode, thumbnail, description];
+  List<Object?> get props => [
+    id,
+    title,
+    season,
+    episode,
+    thumbnail,
+    description,
+  ];
 }
 
 class NetflixSeason extends Equatable {
   final String season;
   final List<NetflixEpisode> episodes;
 
-  const NetflixSeason({
-    required this.season,
-    required this.episodes,
-  });
+  const NetflixSeason({required this.season, required this.episodes});
 
   @override
   List<Object?> get props => [season, episodes];
@@ -66,6 +69,17 @@ class NetflixMovieDetails extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      [title, plot, year, runtime, cast, genres, type, seasons, trailer, recommendations, backdropPath];
+  List<Object?> get props => [
+    title,
+    plot,
+    year,
+    runtime,
+    cast,
+    genres,
+    type,
+    seasons,
+    trailer,
+    recommendations,
+    backdropPath,
+  ];
 }

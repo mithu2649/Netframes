@@ -18,7 +18,8 @@ class CastCard extends StatelessWidget {
             backgroundImage: CachedNetworkImageProvider(
               'https://image.tmdb.org/t/p/w200${cast.profilePath}',
             ),
-            onBackgroundImageError: (exception, stackTrace) => const Icon(Icons.person),
+            onBackgroundImageError: (exception, stackTrace) =>
+                const Icon(Icons.person),
           ),
           Padding(
             padding: const EdgeInsets.all(4.0),

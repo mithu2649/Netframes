@@ -15,7 +15,10 @@ class MovieDetailsLoaded extends MovieDetailsState {
   final MovieDetails movieDetails;
   final List<Movie> recommendedMovies;
 
-  const MovieDetailsLoaded({required this.movieDetails, required this.recommendedMovies});
+  const MovieDetailsLoaded({
+    required this.movieDetails,
+    required this.recommendedMovies,
+  });
 
   @override
   List<Object> get props => [movieDetails, recommendedMovies];

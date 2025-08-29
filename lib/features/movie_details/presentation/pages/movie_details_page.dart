@@ -31,7 +31,9 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
   }
 
   void _checkIfInWatchlist() async {
-    final isInWatchlist = await _watchlistService.isInWatchlist(widget.movie.id.toString());
+    final isInWatchlist = await _watchlistService.isInWatchlist(
+      widget.movie.id.toString(),
+    );
     setState(() {
       _isInWatchlist = isInWatchlist;
     });
@@ -49,9 +51,9 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => MovieDetailsBloc(
-        movieApiService: MovieApiService(),
-      )..add(FetchMovieDetails(widget.movie.id)),
+      create: (context) =>
+          MovieDetailsBloc(movieApiService: MovieApiService())
+            ..add(FetchMovieDetails(widget.movie.id)),
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -59,14 +61,18 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
               expandedHeight: 250.0, // Changed from 200.0
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(widget.movie.title, style: const TextStyle(fontSize: 16.0)),
+                title: Text(
+                  widget.movie.title,
+                  style: const TextStyle(fontSize: 16.0),
+                ),
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
                     Hero(
                       tag: '${widget.movie.posterPath}_${widget.movie.id}',
                       child: CachedNetworkImage(
-                        imageUrl: 'https://image.tmdb.org/t/p/w500${widget.movie.backdropPath}',
+                        imageUrl:
+                            'https://image.tmdb.org/t/p/w500${widget.movie.backdropPath}',
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -76,9 +82,13 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Theme.of(context).colorScheme.surface.withOpacity(0.7),
-                            Theme.of(context).colorScheme.surface.withOpacity(0.0),
-                                                      ],
+                            Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.7),
+                            Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.0),
+                          ],
                         ),
                       ),
                     ),
@@ -87,7 +97,9 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
               ),
               actions: [
                 IconButton(
-                  icon: Icon(_isInWatchlist ? Icons.bookmark : Icons.bookmark_border),
+                  icon: Icon(
+                    _isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
+                  ),
                   onPressed: _toggleWatchlist,
                 ),
               ],
@@ -98,7 +110,10 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Overview', style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      'Overview',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 8.0),
                     Text(widget.movie.overview),
                     const SizedBox(height: 8.0),
@@ -111,7 +126,8 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                     ),
                     const SizedBox(height: 16.0),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Changed from spaceEvenly
+                      mainAxisAlignment: MainAxisAlignment
+                          .spaceBetween, // Changed from spaceEvenly
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
@@ -130,7 +146,8 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => WatchNowPage(
-                                    url: 'https://autoembed.pro/embed/movie/${widget.movie.id}',
+                                    url:
+                                        'https://autoembed.pro/embed/movie/${widget.movie.id}',
                                   ),
                                 ),
                               );
@@ -142,11 +159,16 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                       ],
                     ),
                     const SizedBox(height: 16.0),
-                    Text('Cast', style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      'Cast',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     BlocBuilder<MovieDetailsBloc, MovieDetailsState>(
                       builder: (context, state) {
                         if (state is MovieDetailsLoading) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         } else if (state is MovieDetailsLoaded) {
                           return CastList(cast: state.movieDetails.cast);
                         } else if (state is MovieDetailsError) {
@@ -156,11 +178,17 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                       },
                     ),
                     const SizedBox(height: 16.0),
-                    Text('Recommended', style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      'Recommended',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     BlocBuilder<MovieDetailsBloc, MovieDetailsState>(
                       builder: (context, state) {
                         if (state is MovieDetailsLoaded) {
-                          return MovieList(title: '', movies: state.recommendedMovies);
+                          return MovieList(
+                            title: '',
+                            movies: state.recommendedMovies,
+                          );
                         }
                         return Container(); // Or a loading indicator/error message
                       },

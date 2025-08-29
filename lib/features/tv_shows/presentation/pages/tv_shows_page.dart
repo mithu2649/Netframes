@@ -15,23 +15,25 @@ class TvShowsPage extends StatelessWidget {
       body: BlocBuilder<TvShowsBloc, TvShowsState>(
         builder: (context, state) {
           if (state is TvShowsLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           } else if (state is TvShowsLoaded) {
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TvShowList(title: 'Popular TV Shows', tvShows: state.popularTvShows),
-                  TvShowList(title: 'Top Rated TV Shows', tvShows: state.topRatedTvShows),
+                  TvShowList(
+                    title: 'Popular TV Shows',
+                    tvShows: state.popularTvShows,
+                  ),
+                  TvShowList(
+                    title: 'Top Rated TV Shows',
+                    tvShows: state.topRatedTvShows,
+                  ),
                 ],
               ),
             );
           } else if (state is TvShowsError) {
-            return Center(
-              child: Text(state.message),
-            );
+            return Center(child: Text(state.message));
           }
           return Container();
         },

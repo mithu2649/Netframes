@@ -1,4 +1,3 @@
-import 'package:better_player/better_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,7 +27,6 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
   Future<void> _playVideo(
     BuildContext context,
     List<VideoStream> streams,
-    List<BetterPlayerSubtitlesSource> subtitles,
   ) async {
     if (streams.isNotEmpty) {
       final lowQualityStream = streams.firstWhere(
@@ -42,8 +40,6 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
             builder: (context) => VideoPlayerPage(
               videoUrl: lowQualityStream.url,
               headers: lowQualityStream.headers,
-              cookies: lowQualityStream.cookies,
-              subtitles: subtitles,
               videoStreams: streams,
             ),
           ),
@@ -62,8 +58,6 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
       if (kDebugMode) {
         print('Playing video with URL: ${lowQualityStream.url}');
         print('VideoPlayerPage headers: ${lowQualityStream.headers}');
-        print('VideoPlayerPage cookies: ${lowQualityStream.cookies}');
-        print('VideoPlayerPage subtitles: $subtitles');
       }
     } else {
       ScaffoldMessenger.of(
@@ -119,7 +113,7 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text('Year: ${details.year} • ${details.runtime}'),
-                        
+
                         const SizedBox(height: 8),
                         Text('Plot: ${details.plot}'),
                         const SizedBox(height: 8),
@@ -132,7 +126,10 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                   text: 'Cast: ',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                                TextSpan(text: details.cast.join(', '),  style: Theme.of(context).textTheme.bodySmall,),
+                                TextSpan(
+                                  text: details.cast.join(', '),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
                               ],
                             ),
                           ),
@@ -161,7 +158,8 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                           label: Text(
                                             'Season ${details.seasons[index].season}',
                                           ),
-                                          selected: _selectedSeasonIndex == index,
+                                          selected:
+                                              _selectedSeasonIndex == index,
                                           onSelected: (bool selected) {
                                             if (selected) {
                                               setState(() {
@@ -184,10 +182,12 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                               ListView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: details.seasons.isEmpty ? 0 : details
-                                    .seasons[_selectedSeasonIndex]
-                                    .episodes
-                                    .length,
+                                itemCount: details.seasons.isEmpty
+                                    ? 0
+                                    : details
+                                          .seasons[_selectedSeasonIndex]
+                                          .episodes
+                                          .length,
                                 itemBuilder: (context, index) {
                                   final episode = details
                                       .seasons[_selectedSeasonIndex]
@@ -215,10 +215,15 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                     );
                                                   },
                                               errorBuilder:
-                                                  (context, error, stackTrace) =>
-                                                      const Icon(Icons.error),
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => const Icon(Icons.error),
                                             )
-                                          : const Icon(Icons.image_not_supported),
+                                          : const Icon(
+                                              Icons.image_not_supported,
+                                            ),
                                     ),
                                     title: Text(episode.title),
                                     subtitle: Text(
@@ -231,12 +236,14 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                           title: episode.title,
                                           overview: details.plot,
                                           posterPath: widget.movie.posterPath,
-                                          backdropPath: widget.movie.backdropPath,
+                                          backdropPath:
+                                              widget.movie.backdropPath,
                                           voteAverage: 0.0,
                                           provider: widget.movie.provider,
                                         );
                                         dynamic result;
-                                        if (widget.movie.provider == 'Netflix') {
+                                        if (widget.movie.provider ==
+                                            'Netflix') {
                                           result = await context
                                               .read<HomeBloc>()
                                               .netflixMirrorProvider
@@ -262,7 +269,8 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                 episodeMovie,
                                                 episode: episode,
                                               );
-                                        } else if (widget.movie.provider == 'DramaDrip') {
+                                        } else if (widget.movie.provider ==
+                                            'DramaDrip') {
                                           result = await context
                                               .read<HomeBloc>()
                                               .dramaDripProvider
@@ -271,19 +279,19 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                 episode: episode,
                                               );
                                         }
-                                        if (result != null && result['streams'] != null) {
+                                        if (result != null &&
+                                            result['streams'] != null) {
                                           final streams =
                                               result['streams']
                                                   as List<VideoStream>;
-                                          final subtitles =
-                                              result['subtitles']
-                                                  as List<
-                                                    BetterPlayerSubtitlesSource
-                                                  >;
-                                          _playVideo(context, streams, subtitles);
+                                          _playVideo(context, streams);
                                         } else {
-                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('No streams found')),
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('No streams found'),
+                                            ),
                                           );
                                         }
                                       } catch (e) {
@@ -334,23 +342,28 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                       .read<HomeBloc>()
                                       .primeVideoProvider
                                       .loadLink(movieWithTitle);
-                                } else if (widget.movie.provider == 'DramaDrip') {
-                                  final episode = details.seasons.first.episodes.first;
+                                } else if (widget.movie.provider ==
+                                    'DramaDrip') {
+                                  final episode =
+                                      details.seasons.first.episodes.first;
                                   result = await context
                                       .read<HomeBloc>()
                                       .dramaDripProvider
-                                      .loadLink(movieWithTitle, episode: episode);
+                                      .loadLink(
+                                        movieWithTitle,
+                                        episode: episode,
+                                      );
                                 }
-                                 if (result != null && result['streams'] != null) {
+                                if (result != null &&
+                                    result['streams'] != null) {
                                   final streams =
                                       result['streams'] as List<VideoStream>;
-                                  final subtitles =
-                                      result['subtitles']
-                                          as List<BetterPlayerSubtitlesSource>;
-                                  _playVideo(context, streams, subtitles);
+                                  _playVideo(context, streams);
                                 } else {
-                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('No streams found')),
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('No streams found'),
+                                    ),
                                   );
                                 }
                               } catch (e) {

@@ -1,4 +1,3 @@
-
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/home/domain/entities/netflix_movie_details.dart';
 

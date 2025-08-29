@@ -21,5 +21,13 @@ class MovieDetails extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, title, overview, posterPath, backdropPath, voteAverage, cast];
+  List<Object?> get props => [
+    id,
+    title,
+    overview,
+    posterPath,
+    backdropPath,
+    voteAverage,
+    cast,
+  ];
 }

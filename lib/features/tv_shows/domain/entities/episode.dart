@@ -19,11 +19,11 @@ class Episode extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        overview,
-        stillPath,
-        episodeNumber,
-        voteAverage,
-      ];
+    id,
+    name,
+    overview,
+    stillPath,
+    episodeNumber,
+    voteAverage,
+  ];
 }

@@ -25,7 +25,9 @@ class HomePage extends StatelessWidget {
                       selected: state.selectedProvider == 'Netflix',
                       onSelected: (selected) {
                         if (selected) {
-                          context.read<HomeBloc>().add(const SelectProvider('Netflix'));
+                          context.read<HomeBloc>().add(
+                            const SelectProvider('Netflix'),
+                          );
                         }
                       },
                     ),
@@ -35,7 +37,9 @@ class HomePage extends StatelessWidget {
                       selected: state.selectedProvider == 'JioHotstar',
                       onSelected: (selected) {
                         if (selected) {
-                          context.read<HomeBloc>().add(const SelectProvider('JioHotstar'));
+                          context.read<HomeBloc>().add(
+                            const SelectProvider('JioHotstar'),
+                          );
                         }
                       },
                     ),
@@ -45,7 +49,9 @@ class HomePage extends StatelessWidget {
                       selected: state.selectedProvider == 'PrimeVideo',
                       onSelected: (selected) {
                         if (selected) {
-                          context.read<HomeBloc>().add(const SelectProvider('PrimeVideo'));
+                          context.read<HomeBloc>().add(
+                            const SelectProvider('PrimeVideo'),
+                          );
                         }
                       },
                     ),
@@ -55,7 +61,9 @@ class HomePage extends StatelessWidget {
                       selected: state.selectedProvider == 'DramaDrip',
                       onSelected: (selected) {
                         if (selected) {
-                          context.read<HomeBloc>().add(const SelectProvider('DramaDrip'));
+                          context.read<HomeBloc>().add(
+                            const SelectProvider('DramaDrip'),
+                          );
                         }
                       },
                     ),
@@ -65,7 +73,9 @@ class HomePage extends StatelessWidget {
                       selected: state.selectedProvider == 'TMDB',
                       onSelected: (selected) {
                         if (selected) {
-                          context.read<HomeBloc>().add(const SelectProvider('TMDB'));
+                          context.read<HomeBloc>().add(
+                            const SelectProvider('TMDB'),
+                          );
                         }
                       },
                     ),
@@ -74,9 +84,7 @@ class HomePage extends StatelessWidget {
               ),
               if (state is HomeLoading)
                 const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 )
               else if (state is HomeLoaded)
                 Expanded(
@@ -90,11 +98,7 @@ class HomePage extends StatelessWidget {
                   ),
                 )
               else if (state is HomeError)
-                Expanded(
-                  child: Center(
-                    child: Text(state.message),
-                  ),
-                ),
+                Expanded(child: Center(child: Text(state.message))),
             ],
           );
         },

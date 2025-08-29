@@ -13,7 +13,8 @@ class ShellPage extends StatefulWidget {
   State<ShellPage> createState() => _ShellPageState();
 }
 
-class _ShellPageState extends State<ShellPage> with SingleTickerProviderStateMixin {
+class _ShellPageState extends State<ShellPage>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   late ScrollController _scrollController;
   late AnimationController _animationController;
@@ -35,14 +36,16 @@ class _ShellPageState extends State<ShellPage> with SingleTickerProviderStateMix
     );
 
     _scrollController.addListener(() {
-      if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_scrollController.position.userScrollDirection ==
+          ScrollDirection.reverse) {
         if (_showFabExtended) {
           setState(() {
             _showFabExtended = false;
           });
           _animationController.reverse();
         }
-      } else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+      } else if (_scrollController.position.userScrollDirection ==
+          ScrollDirection.forward) {
         if (!_showFabExtended) {
           setState(() {
             _showFabExtended = true;
@@ -93,7 +96,8 @@ class _ShellPageState extends State<ShellPage> with SingleTickerProviderStateMix
                 });
                 _animationController.reverse();
               }
-            } else if (scrollNotification.direction == ScrollDirection.forward) {
+            } else if (scrollNotification.direction ==
+                ScrollDirection.forward) {
               if (!_showFabExtended) {
                 setState(() {
                   _showFabExtended = true;
@@ -104,9 +108,7 @@ class _ShellPageState extends State<ShellPage> with SingleTickerProviderStateMix
           }
           return false;
         },
-        child: Center(
-          child: _widgetOptions.elementAt(_selectedIndex),
-        ),
+        child: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       ),
       floatingActionButton: _showFabExtended
           ? FloatingActionButton.extended(
@@ -134,14 +136,8 @@ class _ShellPageState extends State<ShellPage> with SingleTickerProviderStateMix
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
         destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.movie),
-            label: 'Movies',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tv),
-            label: 'TV Shows',
-          ),
+          NavigationDestination(icon: Icon(Icons.movie), label: 'Movies'),
+          NavigationDestination(icon: Icon(Icons.tv), label: 'TV Shows'),
           NavigationDestination(
             icon: Icon(Icons.video_library),
             label: 'Library',

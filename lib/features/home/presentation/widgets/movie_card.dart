@@ -10,19 +10,28 @@ class MovieCard extends StatelessWidget {
   final int? index;
   final String categoryTitle;
 
-  const MovieCard(
-      {super.key,
-      required this.movie,
-      this.index,
-      required this.categoryTitle});
+  const MovieCard({
+    super.key,
+    required this.movie,
+    this.index,
+    required this.categoryTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = movie.provider == 'Netflix' || movie.provider == 'JioHotstar' || movie.provider == 'PrimeVideo' || movie.provider == 'DramaDrip'
+    final imageUrl =
+        movie.provider == 'Netflix' ||
+            movie.provider == 'JioHotstar' ||
+            movie.provider == 'PrimeVideo' ||
+            movie.provider == 'DramaDrip'
         ? movie.posterPath
         : 'https://image.tmdb.org/t/p/w500${movie.posterPath}';
 
-    final httpHeaders = movie.provider == 'Netflix' || movie.provider == 'JioHotstar' || movie.provider == 'PrimeVideo' || movie.provider == 'DramaDrip'
+    final httpHeaders =
+        movie.provider == 'Netflix' ||
+            movie.provider == 'JioHotstar' ||
+            movie.provider == 'PrimeVideo' ||
+            movie.provider == 'DramaDrip'
         ? {'Referer': 'https://dramadrip.com/'}
         : null;
 
@@ -38,7 +47,8 @@ class MovieCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Hero(
-          tag: '${categoryTitle}_${movie.posterPath}_${movie.id}_${index ?? ''}',
+          tag:
+              '${categoryTitle}_${movie.posterPath}_${movie.id}_${index ?? ''}',
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16.0),
             child: AspectRatio(

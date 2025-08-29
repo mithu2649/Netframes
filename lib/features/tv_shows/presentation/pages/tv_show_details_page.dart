@@ -30,7 +30,9 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
   }
 
   void _checkIfInWatchlist() async {
-    final isInWatchlist = await _watchlistService.isInWatchlist(widget.tvShow.id.toString());
+    final isInWatchlist = await _watchlistService.isInWatchlist(
+      widget.tvShow.id.toString(),
+    );
     setState(() {
       _isInWatchlist = isInWatchlist;
     });
@@ -48,13 +50,14 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TvShowDetailsBloc>(
-      create: (context) => TvShowDetailsBloc(
-        movieApiService: MovieApiService(),
-      )..add(FetchTvShowDetails(widget.tvShow.id)),
+      create: (context) =>
+          TvShowDetailsBloc(movieApiService: MovieApiService())
+            ..add(FetchTvShowDetails(widget.tvShow.id)),
       child: Scaffold(
         body: BlocBuilder<TvShowDetailsBloc, TvShowDetailsState>(
           builder: (context, state) {
-            if (state is TvShowDetailsLoading || state is TvShowDetailsInitial) {
+            if (state is TvShowDetailsLoading ||
+                state is TvShowDetailsInitial) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is TvShowDetailsLoaded) {
               final tvShowDetails = state.tvShowDetails;
@@ -67,18 +70,26 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                     expandedHeight: 250.0, // Changed from 200.0
                     pinned: true,
                     flexibleSpace: FlexibleSpaceBar(
-                      title: Text(tvShowDetails.name, style: const TextStyle(fontSize: 16.0)),
+                      title: Text(
+                        tvShowDetails.name,
+                        style: const TextStyle(fontSize: 16.0),
+                      ),
                       background: Hero(
                         tag: '${tvShowDetails.posterPath}_${tvShowDetails.id}',
                         child: CachedNetworkImage(
-                          imageUrl: 'https://image.tmdb.org/t/p/w500${tvShowDetails.backdropPath ?? tvShowDetails.posterPath}', // Changed to backdropPath
+                          imageUrl:
+                              'https://image.tmdb.org/t/p/w500${tvShowDetails.backdropPath ?? tvShowDetails.posterPath}', // Changed to backdropPath
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     actions: [
                       IconButton(
-                        icon: Icon(_isInWatchlist ? Icons.bookmark : Icons.bookmark_border),
+                        icon: Icon(
+                          _isInWatchlist
+                              ? Icons.bookmark
+                              : Icons.bookmark_border,
+                        ),
                         onPressed: _toggleWatchlist,
                       ),
                     ],
@@ -89,7 +100,10 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Overview', style: Theme.of(context).textTheme.headlineSmall),
+                          Text(
+                            'Overview',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
                           const SizedBox(height: 8.0),
                           Text(tvShowDetails.overview),
                           const SizedBox(height: 8.0),
@@ -97,7 +111,9 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                             children: [
                               const Icon(Icons.star, color: Colors.amber),
                               const SizedBox(width: 4.0),
-                              Text(tvShowDetails.voteAverage.toStringAsFixed(1)),
+                              Text(
+                                tvShowDetails.voteAverage.toStringAsFixed(1),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16.0),
@@ -120,7 +136,8 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => WatchNowPage(
-                                          url: 'https://autoembed.pro/embed/tv/${tvShowDetails.id}/1/1',
+                                          url:
+                                              'https://autoembed.pro/embed/tv/${tvShowDetails.id}/1/1',
                                         ),
                                       ),
                                     );
@@ -132,12 +149,20 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                             ],
                           ),
                           const SizedBox(height: 16.0),
-                          Text('Cast', style: Theme.of(context).textTheme.headlineSmall),
+                          Text(
+                            'Cast',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
                           // For TV shows, we need to fetch cast separately if needed.
                           // For now, just a placeholder.
-                          const Text('Cast information not available for TV shows yet.'),
+                          const Text(
+                            'Cast information not available for TV shows yet.',
+                          ),
                           const SizedBox(height: 16.0),
-                          Text('Seasons', style: Theme.of(context).textTheme.headlineSmall),
+                          Text(
+                            'Seasons',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
                           const SizedBox(height: 8.0),
                           SizedBox(
                             height: 50, // Height for horizontal season chips
@@ -147,13 +172,21 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                               itemBuilder: (context, index) {
                                 final season = tvShowDetails.seasons![index];
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4.0,
+                                  ),
                                   child: ChoiceChip(
-                                    label: Text('Season ${season.seasonNumber}'),
-                                    selected: season.seasonNumber == selectedSeasonNumber,
+                                    label: Text(
+                                      'Season ${season.seasonNumber}',
+                                    ),
+                                    selected:
+                                        season.seasonNumber ==
+                                        selectedSeasonNumber,
                                     onSelected: (selected) {
                                       if (selected) {
-                                        context.read<TvShowDetailsBloc>().add(SelectSeason(season.seasonNumber));
+                                        context.read<TvShowDetailsBloc>().add(
+                                          SelectSeason(season.seasonNumber),
+                                        );
                                       }
                                     },
                                   ),
@@ -163,7 +196,10 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                           ),
                           const SizedBox(height: 16.0),
                           if (episodes != null && episodes.isNotEmpty) ...[
-                            Text('Episodes', style: Theme.of(context).textTheme.headlineSmall),
+                            Text(
+                              'Episodes',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
                             const SizedBox(height: 8.0),
                             ListView.builder(
                               shrinkWrap: true,
@@ -172,29 +208,52 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                               itemBuilder: (context, index) {
                                 final episode = episodes[index];
                                 return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 4.0,
+                                  ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         if (episode.stillPath != null) ...[
                                           CachedNetworkImage(
-                                            imageUrl: 'https://image.tmdb.org/t/p/w200${episode.stillPath}',
+                                            imageUrl:
+                                                'https://image.tmdb.org/t/p/w200${episode.stillPath}',
                                             width: 100,
                                             height: 60,
                                             fit: BoxFit.cover,
-                                            placeholder: (context, url) => ShimmerLoading(width: 100, height: 60),
-                                            errorWidget: (context, url, error) => const Icon(Icons.error),
+                                            placeholder: (context, url) =>
+                                                ShimmerLoading(
+                                                  width: 100,
+                                                  height: 60,
+                                                ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(Icons.error),
                                           ),
                                           const SizedBox(width: 8.0),
                                         ],
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text('E${episode.episodeNumber}: ${episode.name}', style: Theme.of(context).textTheme.titleMedium),
-                                              Text(episode.overview, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                                              Text(
+                                                'E${episode.episodeNumber}: ${episode.name}',
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleMedium,
+                                              ),
+                                              Text(
+                                                episode.overview,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                              ),
                                               // Add duration if available in API
                                             ],
                                           ),
@@ -206,7 +265,9 @@ class _TvShowDetailsPageState extends State<TvShowDetailsPage> {
                               },
                             ),
                           ] else if (selectedSeasonNumber != null) ...[
-                            const Center(child: Text('No episodes found for this season.')),
+                            const Center(
+                              child: Text('No episodes found for this season.'),
+                            ),
                           ],
                         ],
                       ),

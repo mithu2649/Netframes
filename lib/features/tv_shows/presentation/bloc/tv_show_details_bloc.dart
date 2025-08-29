@@ -6,16 +6,29 @@ import 'package:netframes/features/tv_shows/presentation/bloc/tv_show_details_st
 class TvShowDetailsBloc extends Bloc<TvShowDetailsEvent, TvShowDetailsState> {
   final MovieApiService movieApiService;
 
-  TvShowDetailsBloc({required this.movieApiService}) : super(TvShowDetailsInitial()) {
+  TvShowDetailsBloc({required this.movieApiService})
+    : super(TvShowDetailsInitial()) {
     on<FetchTvShowDetails>((event, emit) async {
       emit(TvShowDetailsLoading());
       try {
-        final tvShowDetails = await movieApiService.getTvShowDetails(event.tvShowId);
+        final tvShowDetails = await movieApiService.getTvShowDetails(
+          event.tvShowId,
+        );
         // Automatically select the first season if available
-        if (tvShowDetails.seasons != null && tvShowDetails.seasons!.isNotEmpty) {
+        if (tvShowDetails.seasons != null &&
+            tvShowDetails.seasons!.isNotEmpty) {
           final firstSeasonNumber = tvShowDetails.seasons!.first.seasonNumber;
-          final seasonDetails = await movieApiService.getSeasonDetails(tvShowDetails.id, firstSeasonNumber);
-          emit(TvShowDetailsLoaded(tvShowDetails, selectedSeasonNumber: firstSeasonNumber, episodes: seasonDetails.episodes));
+          final seasonDetails = await movieApiService.getSeasonDetails(
+            tvShowDetails.id,
+            firstSeasonNumber,
+          );
+          emit(
+            TvShowDetailsLoaded(
+              tvShowDetails,
+              selectedSeasonNumber: firstSeasonNumber,
+              episodes: seasonDetails.episodes,
+            ),
+          );
         } else {
           emit(TvShowDetailsLoaded(tvShowDetails));
         }
@@ -26,11 +39,23 @@ class TvShowDetailsBloc extends Bloc<TvShowDetailsEvent, TvShowDetailsState> {
 
     on<SelectSeason>((event, emit) async {
       if (state is TvShowDetailsLoaded) {
-        final currentTvShowDetails = (state as TvShowDetailsLoaded).tvShowDetails;
-        emit(TvShowDetailsLoadingSeason(currentTvShowDetails, event.seasonNumber));
+        final currentTvShowDetails =
+            (state as TvShowDetailsLoaded).tvShowDetails;
+        emit(
+          TvShowDetailsLoadingSeason(currentTvShowDetails, event.seasonNumber),
+        );
         try {
-          final seasonDetails = await movieApiService.getSeasonDetails(currentTvShowDetails.id, event.seasonNumber);
-          emit(TvShowDetailsLoaded(currentTvShowDetails, selectedSeasonNumber: event.seasonNumber, episodes: seasonDetails.episodes));
+          final seasonDetails = await movieApiService.getSeasonDetails(
+            currentTvShowDetails.id,
+            event.seasonNumber,
+          );
+          emit(
+            TvShowDetailsLoaded(
+              currentTvShowDetails,
+              selectedSeasonNumber: event.seasonNumber,
+              episodes: seasonDetails.episodes,
+            ),
+          );
         } catch (e) {
           emit(TvShowDetailsError(e.toString()));
         }

@@ -18,14 +18,21 @@ class TvShowDetailsLoaded extends TvShowDetailsState {
   final int? selectedSeasonNumber;
   final List<Episode>? episodes;
 
-  const TvShowDetailsLoaded(this.tvShowDetails, {this.selectedSeasonNumber, this.episodes});
+  const TvShowDetailsLoaded(
+    this.tvShowDetails, {
+    this.selectedSeasonNumber,
+    this.episodes,
+  });
 
   @override
   List<Object?> get props => [tvShowDetails, selectedSeasonNumber, episodes];
 }
 
 class TvShowDetailsLoadingSeason extends TvShowDetailsLoaded {
-  const TvShowDetailsLoadingSeason(super.tvShowDetails, int selectedSeasonNumber) : super(selectedSeasonNumber: selectedSeasonNumber);
+  const TvShowDetailsLoadingSeason(
+    super.tvShowDetails,
+    int selectedSeasonNumber,
+  ) : super(selectedSeasonNumber: selectedSeasonNumber);
 
   @override
   List<Object?> get props => [tvShowDetails, selectedSeasonNumber];

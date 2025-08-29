@@ -24,4 +24,3 @@ class SelectProvider extends HomeEvent {
   @override
   List<Object> get props => [provider];
 }
-

@@ -31,7 +31,7 @@ class _WatchNowPageState extends State<WatchNowPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
-            // Update loading bar. 
+            // Update loading bar.
           },
           onPageStarted: (String url) {
             print('Page started loading: $url');
@@ -64,8 +64,6 @@ class _WatchNowPageState extends State<WatchNowPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: WebViewWidget(controller: _controller),
-    );
+    return Scaffold(body: WebViewWidget(controller: _controller));
   }
 }

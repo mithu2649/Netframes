@@ -10,13 +10,13 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           if (state is ThemeInitial) {
-            return const Center(child: CircularProgressIndicator()); // Show loading for initial state
+            return const Center(
+              child: CircularProgressIndicator(),
+            ); // Show loading for initial state
           } else if (state is ThemeLoaded) {
             final List<Color> accentColors = [
               Colors.deepPurple,
@@ -32,12 +32,16 @@ class SettingsPage extends StatelessWidget {
 
             return ListView(
               children: [
-                const Text('Debugging Text: Settings Page Loaded'), // Added for debugging
+                const Text(
+                  'Debugging Text: Settings Page Loaded',
+                ), // Added for debugging
                 SwitchListTile(
                   title: const Text('Dark Mode'),
                   value: state.themeMode == ThemeMode.dark,
                   onChanged: (value) {
-                    context.read<ThemeBloc>().add(ThemeChanged(value ? ThemeMode.dark : ThemeMode.light));
+                    context.read<ThemeBloc>().add(
+                      ThemeChanged(value ? ThemeMode.dark : ThemeMode.light),
+                    );
                   },
                 ),
                 ListTile(
@@ -46,10 +50,14 @@ class SettingsPage extends StatelessWidget {
                     value: selectedAccentColor,
                     onChanged: (Color? newColor) {
                       if (newColor != null) {
-                        context.read<ThemeBloc>().add(AccentColorChanged(newColor));
+                        context.read<ThemeBloc>().add(
+                          AccentColorChanged(newColor),
+                        );
                       }
                     },
-                    items: accentColors.map<DropdownMenuItem<Color>>((Color value) {
+                    items: accentColors.map<DropdownMenuItem<Color>>((
+                      Color value,
+                    ) {
                       return DropdownMenuItem<Color>(
                         value: value,
                         child: Container(

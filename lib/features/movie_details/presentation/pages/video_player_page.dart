@@ -1,22 +1,25 @@
-import 'package:better_player/better_player.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 class VideoPlayerPage extends StatefulWidget {
-  final String videoUrl;
+  final String? videoUrl;
+  final String? videoTitle;
   final Map<String, String>? headers;
-  final Map<String, String>? cookies;
-  final List<BetterPlayerSubtitlesSource>? subtitles;
   final List<VideoStream>? videoStreams;
+  final List? subtitles;
 
   const VideoPlayerPage({
     super.key,
-    required this.videoUrl,
+    this.videoUrl,
+    this.videoTitle,
     this.headers,
-    this.cookies,
-    this.subtitles,
     this.videoStreams,
+    this.subtitles,
   });
 
   @override
@@ -24,7 +27,21 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
-  late BetterPlayerController _betterPlayerController;
+  late VlcPlayerController _videoPlayerController;
+  final _key = GlobalKey();
+  bool _showControls = true;
+  bool _isLocked = false;
+  Timer? _controlsTimer;
+  double _volume = 0.5;
+  double _brightness = 0.5;
+  String? _feedbackText;
+  IconData? _seekIcon;
+  double _scale = 1.0;
+  double _previousScale = 1.0;
+  BoxFit _fit = BoxFit.contain;
+  bool _subtitlesAdded = false;
+  late VoidCallback _vlcListener;
+  bool _showLoading = true;
 
   @override
   void initState() {
@@ -33,58 +50,628 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    final resolutions = <String, String>{};
-    if (widget.videoStreams != null) {
-      for (final stream in widget.videoStreams!) {
-        resolutions[stream.quality] = stream.url;
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    final initialUrl = widget.videoUrl ?? widget.videoStreams!.first.url;
+    final httpOptions = ['--http-reconnect'];
+    if (widget.headers != null) {
+      if (widget.headers!['Referer'] != null) {
+        httpOptions.add('--http-referrer=${widget.headers!['Referer']}');
       }
+      httpOptions.addAll(widget.headers!.entries.map((e) => '${e.key}:${e.value}'));
     }
 
-    BetterPlayerDataSource betterPlayerDataSource = BetterPlayerDataSource(
-      BetterPlayerDataSourceType.network,
-      widget.videoUrl,
-      headers: widget.headers,
-      subtitles: widget.subtitles,
-      resolutions: resolutions,
+    final options = VlcPlayerOptions(
+      advanced: VlcAdvancedOptions([VlcAdvancedOptions.networkCaching(3000)]),
+      http: VlcHttpOptions(httpOptions),
+      rtp: VlcRtpOptions([VlcRtpOptions.rtpOverRtsp(true)]),
     );
-    _betterPlayerController = BetterPlayerController(
-      BetterPlayerConfiguration(
-        autoPlay: true,
-        fit: BoxFit.cover,
-        fullScreenByDefault: true,
-        placeholder: const Center(child: CircularProgressIndicator()),
-        controlsConfiguration: const BetterPlayerControlsConfiguration(
-          controlBarHeight: 60,
-          iconsColor: Colors.white,
-          playIcon: Icons.play_arrow,
-          pauseIcon: Icons.pause,
-          skipBackIcon: Icons.replay_30,
-          skipForwardIcon: Icons.forward_30,
-          forwardSkipTimeInMilliseconds: 30000,
-          backwardSkipTimeInMilliseconds: 30000,
-          enableSkips: true,
-        ),
-      ),
-      betterPlayerDataSource: betterPlayerDataSource,
+
+    _videoPlayerController = VlcPlayerController.network(
+      initialUrl,
+      hwAcc: HwAcc.full,
+      autoPlay: true,
+      options: options,
     );
+
+    _vlcListener = () {
+      if (!mounted) return;
+      if (_videoPlayerController.value.isInitialized) {
+        if (_showLoading) {
+          setState(() {
+            _showLoading = false;
+          });
+        }
+        if (widget.subtitles != null && !_subtitlesAdded) {
+          for (var subtitle in widget.subtitles!) {
+            _videoPlayerController.addSubtitleFromNetwork(subtitle.url,
+                isSelected: subtitle.isSelected);
+          }
+          setState(() {
+            _subtitlesAdded = true;
+          });
+        }
+        // Hide controls after a delay
+        _startControlsTimer();
+      }
+    };
+    _videoPlayerController.addListener(_vlcListener);
+  }
+
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    if (!_isLocked) {
+      setState(() {
+        _showControls = !_showControls;
+        if (_showControls) {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+              overlays: SystemUiOverlay.values);
+          _startControlsTimer();
+        } else {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        }
+      });
+    }
+  }
+
+  void _toggleLock() {
+    setState(() {
+      _isLocked = !_isLocked;
+      _showControls = false;
+    });
+  }
+
+  void _showFeedback(String text, {IconData? icon}) {
+    setState(() {
+      _feedbackText = text;
+      _seekIcon = icon;
+    });
+    Timer(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _feedbackText = null;
+          _seekIcon = null;
+        });
+      }
+    });
+  }
+
+  void _toggleFit() {
+    setState(() {
+      _fit = _fit == BoxFit.contain ? BoxFit.cover : BoxFit.contain;
+    });
+  }
+
+  Future<bool> _onWillPop() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
+    return true;
   }
 
   @override
   void dispose() {
-    _betterPlayerController.dispose();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    _videoPlayerController.removeListener(_vlcListener);
+    _controlsTimer?.cancel();
+    _videoPlayerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BetterPlayer(
-        controller: _betterPlayerController,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        body: GestureDetector(
+          onTap: _toggleControls,
+          onDoubleTapDown: (details) {
+            if (_isLocked) return;
+            final screenWidth = MediaQuery.of(context).size.width;
+            final tapPosition = details.localPosition.dx;
+            if (tapPosition < screenWidth / 2) {
+              _videoPlayerController.seekTo(
+                _videoPlayerController.value.position -
+                    const Duration(seconds: 10),
+              );
+              _showFeedback('-10s', icon: Icons.fast_rewind);
+            } else {
+              _videoPlayerController.seekTo(
+                _videoPlayerController.value.position +
+                    const Duration(seconds: 10),
+              );
+              _showFeedback('+10s', icon: Icons.fast_forward);
+            }
+          },
+          onVerticalDragUpdate: (details) {
+            if (_isLocked) return;
+            if (details.delta.dy.abs() > details.delta.dx.abs()) {
+              final screenWidth = MediaQuery.of(context).size.width;
+              final tapPosition = details.localPosition.dx;
+              if (tapPosition < screenWidth / 2) {
+                // Left side swipe (brightness)
+                setState(() {
+                  _brightness -= details.delta.dy / 100;
+                  if (_brightness < 0) _brightness = 0;
+                  if (_brightness > 1) _brightness = 1;
+                  ScreenBrightness().setScreenBrightness(_brightness);
+                  _showFeedback('Brightness: ${(_brightness * 100).toInt()}%');
+                });
+              } else {
+                // Right side swipe (volume)
+                setState(() {
+                  _volume -= details.delta.dy / 100;
+                  if (_volume < 0) _volume = 0;
+                  if (_volume > 1) _volume = 1;
+                  _videoPlayerController.setVolume((_volume * 100).toInt());
+                  _showFeedback('Volume: ${(_volume * 100).toInt()}%');
+                });
+              }
+            }
+          },
+          onScaleStart: (details) {
+            _previousScale = _scale;
+          },
+          onScaleUpdate: (details) {
+            setState(() {
+              _scale = _previousScale * details.scale;
+            });
+          },
+          child: Stack(
+            children: [
+              SizedBox.expand(
+                child: Transform.scale(
+                  scale: _scale,
+                  child: FittedBox(
+                    fit: _fit,
+                    alignment: Alignment.center,
+                    child: ValueListenableBuilder<VlcPlayerValue>(
+                      valueListenable: _videoPlayerController,
+                      builder: (context, value, child) {
+                        return SizedBox(
+                          width: value.isInitialized ? value.size.width : 1,
+                          height: value.isInitialized ? value.size.height : 1,
+                          child: VlcPlayer(
+                            key: _key,
+                            controller: _videoPlayerController,
+                            aspectRatio: value.isInitialized ? value.aspectRatio : 16 / 9,
+                            placeholder: const Center(child: CircularProgressIndicator()),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedOpacity(
+                opacity: _showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: ValueListenableBuilder<VlcPlayerValue>(
+                    valueListenable: _videoPlayerController,
+                    builder: (context, value, child) {
+                      return PlayerControls(
+                        controller: _videoPlayerController,
+                        videoStreams: widget.videoStreams,
+                        videoTitle: widget.videoTitle,
+                        onSourceChanged: (url) async {
+                          setState(() {
+                            _showLoading = true;
+                          });
+                          final currentPosition =
+                              _videoPlayerController.value.position;
+                          await _videoPlayerController.setMediaFromNetwork(url);
+                          _videoPlayerController.seekTo(currentPosition);
+                        },
+                        onLock: _toggleLock,
+                        onResize: _toggleFit,
+                        isInitialized: value.isInitialized,
+                      );
+                    }),
+              ),
+              ValueListenableBuilder<VlcPlayerValue>(
+                valueListenable: _videoPlayerController,
+                builder: (context, value, child) {
+                  return (_showLoading || value.isBuffering)
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
+              if (_feedbackText != null)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(150),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_seekIcon != null)
+                          Icon(_seekIcon, color: Colors.white, size: 20),
+                        if (_seekIcon != null) const SizedBox(width: 8),
+                        Text(
+                          _feedbackText!,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (_isLocked)
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _toggleLock,
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Icon(Icons.lock, color: Colors.white, size: 30),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class PlayerControls extends StatelessWidget {
+  final VlcPlayerController controller;
+  final List<VideoStream>? videoStreams;
+  final String? videoTitle;
+  final ValueChanged<String> onSourceChanged;
+  final VoidCallback onLock;
+  final VoidCallback onResize;
+  final bool isInitialized;
+
+  const PlayerControls({
+    super.key,
+    required this.controller,
+    required this.videoStreams,
+    required this.videoTitle,
+    required this.onSourceChanged,
+    required this.onLock,
+    required this.onResize,
+    required this.isInitialized,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabledColor = Colors.white.withOpacity(0.5);
+    final enabledColor = Colors.white;
+
+    return Container(
+      color: Colors.black.withAlpha(150),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Top controls (e.g., title, back button)
+          Row(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(Icons.arrow_back, color: Colors.white),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  videoTitle ?? '',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onLock,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(Icons.lock_open, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Middle controls (play/pause)
+          Center(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isInitialized
+                    ? () {
+                        controller.value.isPlaying
+                            ? controller.pause()
+                            : controller.play();
+                      }
+                    : null,
+                child: ValueListenableBuilder<VlcPlayerValue>(
+                  valueListenable: controller,
+                  builder: (context, value, child) {
+                    if (value.isBuffering) {
+                      return const CircularProgressIndicator();
+                    }
+                    return Icon(
+                      value.isPlaying ? Icons.pause : Icons.play_arrow,
+                      size: 50,
+                      color: isInitialized ? enabledColor : disabledColor,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+          // Bottom controls (progress bar, source/audio selection)
+          Column(
+            children: [
+              VlcPlayerProgressBar(controller: controller),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Source selection button
+                  if (videoStreams != null && videoStreams!.length > 1)
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: isInitialized
+                            ? () => _showSourceSelectionDialog(context)
+                            : null,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.source,
+                                  color: isInitialized
+                                      ? enabledColor
+                                      : disabledColor),
+                              const SizedBox(width: 8),
+                              Text('Source',
+                                  style: TextStyle(
+                                      color: isInitialized
+                                          ? enabledColor
+                                          : disabledColor)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Audio track selection button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: isInitialized
+                          ? () => _showAudioTrackSelectionDialog(context)
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.audiotrack,
+                                color: isInitialized
+                                    ? enabledColor
+                                    : disabledColor),
+                            const SizedBox(width: 8),
+                            Text('Audio',
+                                style: TextStyle(
+                                    color: isInitialized
+                                        ? enabledColor
+                                        : disabledColor)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Subtitle selection button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: isInitialized
+                          ? () => _showSubtitleSelectionDialog(context)
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.subtitles,
+                                color: isInitialized
+                                    ? enabledColor
+                                    : disabledColor),
+                            const SizedBox(width: 8),
+                            Text('Subtitles',
+                                style: TextStyle(
+                                    color: isInitialized
+                                        ? enabledColor
+                                        : disabledColor)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Resize button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onResize,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.aspect_ratio,
+                                color: Colors.white),
+                            const SizedBox(width: 8),
+                            const Text('Resize',
+                                style: TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSourceSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Source'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: videoStreams!.length,
+              itemBuilder: (context, index) {
+                final stream = videoStreams![index];
+                return RadioListTile(
+                  title: Text(stream.quality),
+                  value: stream.url,
+                  groupValue: controller.dataSource,
+                  onChanged: (value) {
+                    onSourceChanged(value.toString());
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAudioTrackSelectionDialog(BuildContext context) async {
+    final audioTracks = await controller.getAudioTracks();
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Audio Track'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: audioTracks.length,
+              itemBuilder: (context, index) {
+                final trackId = audioTracks.keys.elementAt(index);
+                final trackName = audioTracks.values.elementAt(index);
+                return RadioListTile<int>(
+                  title: Text(trackName),
+                  value: trackId,
+                  groupValue: controller.value.activeAudioTrack,
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.setAudioTrack(value);
+                    }
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSubtitleSelectionDialog(BuildContext context) async {
+    final subtitles = await controller.getSpuTracks();
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Subtitle'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: subtitles.length,
+              itemBuilder: (context, index) {
+                final trackId = subtitles.keys.elementAt(index);
+                final trackName = subtitles.values.elementAt(index);
+                return RadioListTile<int>(
+                  title: Text(trackName),
+                  value: trackId,
+                  groupValue: controller.value.activeSpuTrack,
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.setSpuTrack(value);
+                    }
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class VlcPlayerProgressBar extends StatefulWidget {
+  final VlcPlayerController controller;
+
+  const VlcPlayerProgressBar({super.key, required this.controller});
+
+  @override
+  State<VlcPlayerProgressBar> createState() => _VlcPlayerProgressBarState();
+}
+
+class _VlcPlayerProgressBarState extends State<VlcPlayerProgressBar> {
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<VlcPlayerValue>(
+      valueListenable: widget.controller,
+      builder: (context, value, child) {
+        final position = value.position.inMilliseconds.toDouble();
+        final duration = value.duration.inMilliseconds.toDouble();
+        return Slider(
+          value: position.isNaN || position.isInfinite ? 0 : position,
+          min: 0,
+          max: duration.isNaN || duration.isInfinite ? 0 : duration,
+          onChanged: (value) {
+            widget.controller.seekTo(Duration(milliseconds: value.toInt()));
+          },
+        );
+      },
     );
   }
 }

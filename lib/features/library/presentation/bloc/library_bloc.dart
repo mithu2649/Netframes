@@ -10,7 +10,8 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
   final WatchlistService watchlistService;
   final MovieApiService movieApiService;
 
-  LibraryBloc({required this.watchlistService, required this.movieApiService}) : super(LibraryLoading()) {
+  LibraryBloc({required this.watchlistService, required this.movieApiService})
+    : super(LibraryLoading()) {
     on<FetchWatchlist>((event, emit) async {
       emit(LibraryLoading());
       try {
@@ -19,17 +20,23 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
         for (final id in watchlistIds) {
           try {
             final movieDetails = await movieApiService.getMovieDetails(id);
-            watchlist.add(MovieSearchResult(Movie(
-              id: movieDetails.id,
-              title: movieDetails.title,
-              overview: movieDetails.overview,
-              posterPath: movieDetails.posterPath,
-              backdropPath: movieDetails.backdropPath ?? '',
-              voteAverage: movieDetails.voteAverage,
-            )));
+            watchlist.add(
+              MovieSearchResult(
+                Movie(
+                  id: movieDetails.id,
+                  title: movieDetails.title,
+                  overview: movieDetails.overview,
+                  posterPath: movieDetails.posterPath,
+                  backdropPath: movieDetails.backdropPath ?? '',
+                  voteAverage: movieDetails.voteAverage,
+                ),
+              ),
+            );
           } catch (e) {
             try {
-              final tvShowDetails = await movieApiService.getTvShowDetails(int.parse(id));
+              final tvShowDetails = await movieApiService.getTvShowDetails(
+                int.parse(id),
+              );
               watchlist.add(TvShowSearchResult(tvShowDetails));
             } catch (e) {
               print('Error fetching details for ID $id: $e');
