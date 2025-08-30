@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
+import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/movie_details/presentation/bloc/streaming_movie_details/streaming_movie_details_event.dart';
@@ -13,12 +14,14 @@ class StreamingMovieDetailsBloc
   final JioHotstarProvider jioHotstarProvider;
   final PrimeVideoProvider primeVideoProvider;
   final DramaDripProvider dramaDripProvider;
+  final MPlayerProvider mPlayerProvider;
 
   StreamingMovieDetailsBloc({
     required this.netflixMirrorProvider,
     required this.jioHotstarProvider,
     required this.primeVideoProvider,
     required this.dramaDripProvider,
+    required this.mPlayerProvider,
   }) : super(StreamingMovieDetailsLoading()) {
     on<FetchStreamingMovieDetails>((event, emit) async {
       if (kDebugMode) {
@@ -51,6 +54,12 @@ class StreamingMovieDetailsBloc
             event.movie,
           );
           print('Successfully fetched DramaDrip movie details.');
+          emit(StreamingMovieDetailsLoaded(movieDetails));
+        } else if (event.provider == 'MPlayer') {
+          final movieDetails = await mPlayerProvider.getMovieDetails(
+            event.movie,
+          );
+          print('Successfully fetched MPlayer movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         }
       } catch (e) {

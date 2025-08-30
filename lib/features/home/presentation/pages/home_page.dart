@@ -17,69 +17,84 @@ class HomePage extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Netflix'),
-                      selected: state.selectedProvider == 'Netflix',
-                      onSelected: (selected) {
-                        if (selected) {
-                          context.read<HomeBloc>().add(
-                            const SelectProvider('Netflix'),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    ChoiceChip(
-                      label: const Text('JioHotstar'),
-                      selected: state.selectedProvider == 'JioHotstar',
-                      onSelected: (selected) {
-                        if (selected) {
-                          context.read<HomeBloc>().add(
-                            const SelectProvider('JioHotstar'),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    ChoiceChip(
-                      label: const Text('Prime Video'),
-                      selected: state.selectedProvider == 'PrimeVideo',
-                      onSelected: (selected) {
-                        if (selected) {
-                          context.read<HomeBloc>().add(
-                            const SelectProvider('PrimeVideo'),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    ChoiceChip(
-                      label: const Text('DramaDrip'),
-                      selected: state.selectedProvider == 'DramaDrip',
-                      onSelected: (selected) {
-                        if (selected) {
-                          context.read<HomeBloc>().add(
-                            const SelectProvider('DramaDrip'),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    ChoiceChip(
-                      label: const Text('TMDB'),
-                      selected: state.selectedProvider == 'TMDB',
-                      onSelected: (selected) {
-                        if (selected) {
-                          context.read<HomeBloc>().add(
-                            const SelectProvider('TMDB'),
-                          );
-                        }
-                      },
-                    ),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Netflix'),
+                        selected: state.selectedProvider == 'Netflix',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('Netflix'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('JioHotstar'),
+                        selected: state.selectedProvider == 'JioHotstar',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('JioHotstar'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('Prime Video'),
+                        selected: state.selectedProvider == 'PrimeVideo',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('PrimeVideo'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('DramaDrip'),
+                        selected: state.selectedProvider == 'DramaDrip',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('DramaDrip'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('MPlayer'),
+                        selected: state.selectedProvider == 'MPlayer',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('MPlayer'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('TMDB'),
+                        selected: state.selectedProvider == 'TMDB',
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('TMDB'),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (state is HomeLoading)

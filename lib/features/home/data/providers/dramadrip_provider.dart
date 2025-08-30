@@ -582,7 +582,7 @@ class DramaDripProvider implements StreamingProvider {
             );
             final streamUrl = jsonDecode(
               apiResponse.body,
-            )['url'].toString().replaceAll("\/", "/");
+            )['url'].toString().replaceAll("/", "/");
             if (kDebugMode) {
               print("Found instant download link: $streamUrl");
             }
@@ -622,7 +622,7 @@ class DramaDripProvider implements StreamingProvider {
               );
               final streamUrl = jsonDecode(
                 apiResponse.body,
-              )['url'].toString().replaceAll("\/", "/");
+              )['url'].toString().replaceAll("/", "/");
               if (kDebugMode) {
                 print("Found resume worker bot link: $streamUrl");
               }

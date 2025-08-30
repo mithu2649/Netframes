@@ -77,6 +77,7 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
             jioHotstarProvider: homeBloc.jioHotstarProvider,
             primeVideoProvider: homeBloc.primeVideoProvider,
             dramaDripProvider: homeBloc.dramaDripProvider,
+            mPlayerProvider: homeBloc.mPlayerProvider,
           )..add(
             FetchStreamingMovieDetails(
               widget.movie,
@@ -207,8 +208,9 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                     ImageChunkEvent?
                                                     loadingProgress,
                                                   ) {
-                                                    if (loadingProgress == null)
+                                                    if (loadingProgress == null) {
                                                       return child;
+                                                    }
                                                     return const Center(
                                                       child:
                                                           CircularProgressIndicator(),
@@ -274,6 +276,15 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                           result = await context
                                               .read<HomeBloc>()
                                               .dramaDripProvider
+                                              .loadLink(
+                                                episodeMovie,
+                                                episode: episode,
+                                              );
+                                        } else if (widget.movie.provider ==
+                                            'MPlayer') {
+                                          result = await context
+                                              .read<HomeBloc>()
+                                              .mPlayerProvider
                                               .loadLink(
                                                 episodeMovie,
                                                 episode: episode,
@@ -353,6 +364,11 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                         movieWithTitle,
                                         episode: episode,
                                       );
+                                } else if (widget.movie.provider == 'MPlayer') {
+                                  result = await context
+                                      .read<HomeBloc>()
+                                      .mPlayerProvider
+                                      .loadLink(movieWithTitle);
                                 }
                                 if (result != null &&
                                     result['streams'] != null) {

@@ -291,6 +291,7 @@ class PrimeVideoProvider implements StreamingProvider {
     return url;
   }
 
+  @override
   Future<Map<String, dynamic>> loadLink(
     Movie movie, {
     NetflixEpisode? episode,

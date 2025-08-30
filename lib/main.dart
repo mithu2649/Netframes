@@ -1,3 +1,4 @@
+import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/core/api/movie_api_service.dart';
@@ -21,6 +22,7 @@ void main() async {
   final jioHotstarProvider = JioHotstarProvider();
   final primeVideoProvider = PrimeVideoProvider();
   final dramaDripProvider = DramaDripProvider();
+  final mPlayerProvider = MPlayerProvider();
   // Pre-fetch the cookies at startup
   await netflixMirrorProvider.bypass();
   await jioHotstarProvider.bypass();
@@ -32,6 +34,7 @@ void main() async {
       jioHotstarProvider: jioHotstarProvider,
       primeVideoProvider: primeVideoProvider,
       dramaDripProvider: dramaDripProvider,
+      mPlayerProvider: mPlayerProvider,
     ),
   );
 }
@@ -41,6 +44,7 @@ class MyApp extends StatelessWidget {
   final JioHotstarProvider jioHotstarProvider;
   final PrimeVideoProvider primeVideoProvider;
   final DramaDripProvider dramaDripProvider;
+  final MPlayerProvider mPlayerProvider;
 
   const MyApp({
     super.key,
@@ -48,6 +52,7 @@ class MyApp extends StatelessWidget {
     required this.jioHotstarProvider,
     required this.primeVideoProvider,
     required this.dramaDripProvider,
+    required this.mPlayerProvider,
   });
 
   @override
@@ -61,6 +66,7 @@ class MyApp extends StatelessWidget {
             jioHotstarProvider: jioHotstarProvider,
             primeVideoProvider: primeVideoProvider,
             dramaDripProvider: dramaDripProvider,
+            mPlayerProvider: mPlayerProvider,
           )..add(const FetchHomeData('PrimeVideo')),
         ),
         BlocProvider(

@@ -278,6 +278,7 @@ class NetflixMirrorProvider implements StreamingProvider {
     return url;
   }
 
+  @override
   Future<Map<String, dynamic>> loadLink(
     Movie movie, {
     NetflixEpisode? episode,
