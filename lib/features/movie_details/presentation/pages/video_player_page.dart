@@ -41,7 +41,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   BoxFit _fit = BoxFit.contain;
   bool _subtitlesAdded = false;
   late VoidCallback _vlcListener;
-  bool _showLoading = true;
 
   @override
   void initState() {
@@ -77,11 +76,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _vlcListener = () {
       if (!mounted) return;
       if (_videoPlayerController.value.isInitialized) {
-        if (_showLoading) {
-          setState(() {
-            _showLoading = false;
-          });
-        }
         if (widget.subtitles != null && !_subtitlesAdded) {
           for (var subtitle in widget.subtitles!) {
             _videoPlayerController.addSubtitleFromNetwork(subtitle.url,
@@ -266,9 +260,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         videoStreams: widget.videoStreams,
                         videoTitle: widget.videoTitle,
                         onSourceChanged: (url) async {
-                          setState(() {
-                            _showLoading = true;
-                          });
                           final currentPosition =
                               _videoPlayerController.value.position;
                           await _videoPlayerController.setMediaFromNetwork(url);
@@ -283,7 +274,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               ValueListenableBuilder<VlcPlayerValue>(
                 valueListenable: _videoPlayerController,
                 builder: (context, value, child) {
-                  return (_showLoading || value.isBuffering)
+                  final showLoading = value.isBuffering || !value.isPlaying;
+                  return showLoading
                       ? const Center(
                           child: CircularProgressIndicator(),
                         )
@@ -416,8 +408,9 @@ class PlayerControls extends StatelessWidget {
                 child: ValueListenableBuilder<VlcPlayerValue>(
                   valueListenable: controller,
                   builder: (context, value, child) {
-                    if (value.isBuffering) {
-                      return const CircularProgressIndicator();
+                    final showLoading = value.isBuffering || !value.isPlaying;
+                    if (showLoading) {
+                      return const SizedBox.shrink();
                     }
                     return Icon(
                       value.isPlaying ? Icons.pause : Icons.play_arrow,
