@@ -42,6 +42,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   bool _subtitlesAdded = false;
   late VoidCallback _vlcListener;
 
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +104,54 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     });
   }
 
+bool _isSwitchingSource = false;
+
+Future<void> _changeSource(String url) async {
+  if (_isSwitchingSource) return; // prevent reentry if user taps fast
+  _isSwitchingSource = true;
+
+  // optional: show your loader
+  setState(() { _showControls = false; });
+
+  final currentPosition = _videoPlayerController.value.position;
+
+  try {
+    // Flush pipelines first
+    await _videoPlayerController.stop();
+
+    // Load new media on the SAME controller
+    await _videoPlayerController.setMediaFromNetwork(
+      url,
+      autoPlay: true, // start playing automatically
+    );
+
+    // Seek back to previous position when initialized
+    void seekWhenReady() {
+      final v = _videoPlayerController.value;
+      if (v.isInitialized) {
+        _videoPlayerController.seekTo(currentPosition);
+        _videoPlayerController.removeListener(seekWhenReady);
+        _isSwitchingSource = false;
+      }
+    }
+
+    // Add a one-time listener
+    _videoPlayerController.addListener(seekWhenReady);
+
+    // Fallback timeout (in case the initialized event is missed)
+    Future.delayed(const Duration(seconds: 3), () {
+      if (_isSwitchingSource) {
+        _videoPlayerController.seekTo(currentPosition);
+        _isSwitchingSource = false;
+        _videoPlayerController.removeListener(seekWhenReady);
+      }
+    });
+  } catch (e) {
+    _isSwitchingSource = false;
+    // optional: show a toast/snackbar with the error
+  }
+}
+
   void _toggleControls() {
     if (!_isLocked) {
       setState(() {
@@ -147,14 +196,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Future<bool> _onWillPop() async {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
-    return true;
+  if (_videoPlayerController.value.isInitialized) {
+    await _videoPlayerController.stop();
   }
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+  return true; // WillPopScope will pop; dispose() runs afterwards
+}
+
 
   @override
   void dispose() {
@@ -238,7 +293,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           width: value.isInitialized ? value.size.width : 1,
                           height: value.isInitialized ? value.size.height : 1,
                           child: VlcPlayer(
-                            key: _key,
                             controller: _videoPlayerController,
                             aspectRatio: value.isInitialized ? value.aspectRatio : 16 / 9,
                             placeholder: const Center(child: CircularProgressIndicator()),
@@ -253,28 +307,24 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 opacity: _showControls ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),
                 child: ValueListenableBuilder<VlcPlayerValue>(
-                    valueListenable: _videoPlayerController,
-                    builder: (context, value, child) {
-                      return PlayerControls(
-                        controller: _videoPlayerController,
-                        videoStreams: widget.videoStreams,
-                        videoTitle: widget.videoTitle,
-                        onSourceChanged: (url) async {
-                          final currentPosition =
-                              _videoPlayerController.value.position;
-                          await _videoPlayerController.setMediaFromNetwork(url);
-                          _videoPlayerController.seekTo(currentPosition);
-                        },
-                        onLock: _toggleLock,
-                        onResize: _toggleFit,
-                        isInitialized: value.isInitialized,
-                      );
-                    }),
+                  valueListenable: _videoPlayerController,
+                  builder: (context, value, child) {
+                    return PlayerControls(
+                      controller: _videoPlayerController,
+                      videoStreams: widget.videoStreams,
+                      videoTitle: widget.videoTitle,
+                      onSourceChanged: _changeSource,
+                      onLock: _toggleLock,
+                      onResize: _toggleFit,
+                      isInitialized: value.isInitialized,
+                      onBack: _onWillPop,
+                    );
+                  }),
               ),
               ValueListenableBuilder<VlcPlayerValue>(
                 valueListenable: _videoPlayerController,
                 builder: (context, value, child) {
-                  final showLoading = value.isBuffering || !value.isPlaying;
+                  final showLoading = value.isBuffering || !value.isInitialized || !value.isPlaying;
                   return showLoading
                       ? const Center(
                           child: CircularProgressIndicator(),
@@ -336,6 +386,8 @@ class PlayerControls extends StatelessWidget {
   final VoidCallback onLock;
   final VoidCallback onResize;
   final bool isInitialized;
+  final Future<bool> Function()? onBack; // <-- Add this
+
 
   const PlayerControls({
     super.key,
@@ -346,6 +398,7 @@ class PlayerControls extends StatelessWidget {
     required this.onLock,
     required this.onResize,
     required this.isInitialized,
+    this.onBack
   });
 
   @override
@@ -364,7 +417,14 @@ class PlayerControls extends StatelessWidget {
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () async {
+                    if (onBack != null) {
+                      final canPop = await onBack!();
+                      if (canPop && context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  },
                   child: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Icon(Icons.arrow_back, color: Colors.white),
@@ -656,13 +716,21 @@ class _VlcPlayerProgressBarState extends State<VlcPlayerProgressBar> {
       builder: (context, value, child) {
         final position = value.position.inMilliseconds.toDouble();
         final duration = value.duration.inMilliseconds.toDouble();
+
+        // Clamp position between 0 and duration
+        final safePosition = (duration > 0)
+            ? position.clamp(0.0, duration)
+            : 0.0;
+
         return Slider(
-          value: position.isNaN || position.isInfinite ? 0 : position,
+          value: safePosition,
           min: 0,
-          max: duration.isNaN || duration.isInfinite ? 0 : duration,
-          onChanged: (value) {
-            widget.controller.seekTo(Duration(milliseconds: value.toInt()));
-          },
+          max: duration > 0 ? duration : 1, // avoid max=0
+          onChanged: (duration > 0)
+              ? (v) {
+                  widget.controller.seekTo(Duration(milliseconds: v.toInt()));
+                }
+              : null, // disable slider if duration is zero
         );
       },
     );
