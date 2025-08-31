@@ -1,9 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+import 'package:better_player/better_player.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
+import 'package:netframes/features/movie_details/presentation/widgets/custom_video_controls.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -27,8 +27,7 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
-  late VlcPlayerController _videoPlayerController;
-  final _key = GlobalKey();
+  late BetterPlayerController _controller;
   bool _showControls = true;
   bool _isLocked = false;
   Timer? _controlsTimer;
@@ -39,9 +38,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   double _scale = 1.0;
   double _previousScale = 1.0;
   BoxFit _fit = BoxFit.contain;
-  bool _subtitlesAdded = false;
-  late VoidCallback _vlcListener;
-
+  bool _showUnlockButton = false;
 
   @override
   void initState() {
@@ -52,119 +49,67 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    final initialUrl = widget.videoUrl ?? widget.videoStreams!.first.url;
-    final httpOptions = ['--http-reconnect'];
-    if (widget.headers != null) {
-      if (widget.headers!['Referer'] != null) {
-        httpOptions.add('--http-referrer=${widget.headers!['Referer']}');
-      }
-      httpOptions.addAll(widget.headers!.entries.map((e) => '${e.key}:${e.value}'));
-    }
+    final url = widget.videoUrl ?? widget.videoStreams!.first.url;
 
-    final options = VlcPlayerOptions(
-      advanced: VlcAdvancedOptions([VlcAdvancedOptions.networkCaching(3000)]),
-      http: VlcHttpOptions(httpOptions),
-      rtp: VlcRtpOptions([VlcRtpOptions.rtpOverRtsp(true)]),
+    final dataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      url,
+      headers: widget.headers,
+      useAsmsSubtitles: true,
+      useAsmsTracks: true,
+      subtitles: widget.subtitles
+          ?.map((s) => BetterPlayerSubtitlesSource(
+                type: BetterPlayerSubtitlesSourceType.network,
+                name: s.language, // Assuming 's' has a 'language' property
+                urls: [s.url],
+              ))
+          .toList(),
     );
 
-    _videoPlayerController = VlcPlayerController.network(
-      initialUrl,
-      hwAcc: HwAcc.full,
-      autoPlay: true,
-      options: options,
+    _controller = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: true,
+        fit: BoxFit.contain,
+        aspectRatio: 16 / 9,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          showControls: false, // disable default, we use our custom one
+        ),
+      ),
+      betterPlayerDataSource: dataSource,
     );
 
-    _vlcListener = () {
-      if (!mounted) return;
-      if (_videoPlayerController.value.isInitialized) {
-        if (widget.subtitles != null && !_subtitlesAdded) {
-          for (var subtitle in widget.subtitles!) {
-            _videoPlayerController.addSubtitleFromNetwork(subtitle.url,
-                isSelected: subtitle.isSelected);
-          }
-          setState(() {
-            _subtitlesAdded = true;
-          });
-        }
-        // Hide controls after a delay
-        _startControlsTimer();
-      }
-    };
-    _videoPlayerController.addListener(_vlcListener);
+    _startControlsTimer();
   }
 
   void _startControlsTimer() {
     _controlsTimer?.cancel();
     _controlsTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        setState(() {
-          _showControls = false;
-        });
+        setState(() => _showControls = false);
       }
     });
   }
-
-bool _isSwitchingSource = false;
-
-Future<void> _changeSource(String url) async {
-  if (_isSwitchingSource) return; // prevent reentry if user taps fast
-  _isSwitchingSource = true;
-
-  // optional: show your loader
-  setState(() { _showControls = false; });
-
-  final currentPosition = _videoPlayerController.value.position;
-
-  try {
-    // Flush pipelines first
-    await _videoPlayerController.stop();
-
-    // Load new media on the SAME controller
-    await _videoPlayerController.setMediaFromNetwork(
-      url,
-      autoPlay: true, // start playing automatically
-    );
-
-    // Seek back to previous position when initialized
-    void seekWhenReady() {
-      final v = _videoPlayerController.value;
-      if (v.isInitialized) {
-        _videoPlayerController.seekTo(currentPosition);
-        _videoPlayerController.removeListener(seekWhenReady);
-        _isSwitchingSource = false;
-      }
-    }
-
-    // Add a one-time listener
-    _videoPlayerController.addListener(seekWhenReady);
-
-    // Fallback timeout (in case the initialized event is missed)
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_isSwitchingSource) {
-        _videoPlayerController.seekTo(currentPosition);
-        _isSwitchingSource = false;
-        _videoPlayerController.removeListener(seekWhenReady);
-      }
-    });
-  } catch (e) {
-    _isSwitchingSource = false;
-    // optional: show a toast/snackbar with the error
-  }
-}
 
   void _toggleControls() {
-    if (!_isLocked) {
+    if (_isLocked) {
       setState(() {
-        _showControls = !_showControls;
-        if (_showControls) {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-              overlays: SystemUiOverlay.values);
-          _startControlsTimer();
-        } else {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        _showUnlockButton = true;
+      });
+      Timer(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _showUnlockButton = false;
+          });
         }
       });
+      return;
     }
+    setState(() {
+      _showControls = !_showControls;
+      if (_showControls) {
+        _startControlsTimer();
+      }
+    });
   }
 
   void _toggleLock() {
@@ -192,30 +137,26 @@ Future<void> _changeSource(String url) async {
   void _toggleFit() {
     setState(() {
       _fit = _fit == BoxFit.contain ? BoxFit.cover : BoxFit.contain;
+      _controller.setOverriddenFit(_fit);
     });
   }
 
   Future<bool> _onWillPop() async {
-  if (_videoPlayerController.value.isInitialized) {
-    await _videoPlayerController.stop();
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    return true;
   }
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: SystemUiOverlay.values,
-  );
-  return true; // WillPopScope will pop; dispose() runs afterwards
-}
-
 
   @override
   void dispose() {
-    _videoPlayerController.removeListener(_vlcListener);
     _controlsTimer?.cancel();
-    _videoPlayerController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -230,17 +171,12 @@ Future<void> _changeSource(String url) async {
             if (_isLocked) return;
             final screenWidth = MediaQuery.of(context).size.width;
             final tapPosition = details.localPosition.dx;
+            final position = _controller.videoPlayerController!.value.position;
             if (tapPosition < screenWidth / 2) {
-              _videoPlayerController.seekTo(
-                _videoPlayerController.value.position -
-                    const Duration(seconds: 10),
-              );
+              _controller.seekTo(position - const Duration(seconds: 10));
               _showFeedback('-10s', icon: Icons.fast_rewind);
             } else {
-              _videoPlayerController.seekTo(
-                _videoPlayerController.value.position +
-                    const Duration(seconds: 10),
-              );
+              _controller.seekTo(position + const Duration(seconds: 10));
               _showFeedback('+10s', icon: Icons.fast_forward);
             }
           },
@@ -250,93 +186,66 @@ Future<void> _changeSource(String url) async {
               final screenWidth = MediaQuery.of(context).size.width;
               final tapPosition = details.localPosition.dx;
               if (tapPosition < screenWidth / 2) {
-                // Left side swipe (brightness)
-                setState(() {
-                  _brightness -= details.delta.dy / 100;
-                  if (_brightness < 0) _brightness = 0;
-                  if (_brightness > 1) _brightness = 1;
-                  ScreenBrightness().setScreenBrightness(_brightness);
-                  _showFeedback('Brightness: ${(_brightness * 100).toInt()}%');
-                });
+                _brightness -= details.delta.dy / 100;
+                _brightness = _brightness.clamp(0.0, 1.0);
+                ScreenBrightness().setScreenBrightness(_brightness);
+                _showFeedback('Brightness: ${(_brightness * 100).toInt()}%');
               } else {
-                // Right side swipe (volume)
-                setState(() {
-                  _volume -= details.delta.dy / 100;
-                  if (_volume < 0) _volume = 0;
-                  if (_volume > 1) _volume = 1;
-                  _videoPlayerController.setVolume((_volume * 100).toInt());
-                  _showFeedback('Volume: ${(_volume * 100).toInt()}%');
-                });
+                _volume -= details.delta.dy / 100;
+                _volume = _volume.clamp(0.0, 1.0);
+                _controller.setVolume(_volume);
+                _showFeedback('Volume: ${(_volume * 100).toInt()}%');
               }
             }
           },
-          onScaleStart: (details) {
-            _previousScale = _scale;
-          },
+          onScaleStart: (details) => _previousScale = _scale,
           onScaleUpdate: (details) {
-            setState(() {
-              _scale = _previousScale * details.scale;
-            });
+            setState(() => _scale = _previousScale * details.scale);
           },
           child: Stack(
             children: [
               SizedBox.expand(
                 child: Transform.scale(
                   scale: _scale,
-                  child: FittedBox(
-                    fit: _fit,
-                    alignment: Alignment.center,
-                    child: ValueListenableBuilder<VlcPlayerValue>(
-                      valueListenable: _videoPlayerController,
-                      builder: (context, value, child) {
-                        return SizedBox(
-                          width: value.isInitialized ? value.size.width : 1,
-                          height: value.isInitialized ? value.size.height : 1,
-                          child: VlcPlayer(
-                            controller: _videoPlayerController,
-                            aspectRatio: value.isInitialized ? value.aspectRatio : 16 / 9,
-                            placeholder: const Center(child: CircularProgressIndicator()),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  child: BetterPlayer(controller: _controller),
                 ),
               ),
               AnimatedOpacity(
                 opacity: _showControls ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),
-                child: ValueListenableBuilder<VlcPlayerValue>(
-                  valueListenable: _videoPlayerController,
-                  builder: (context, value, child) {
-                    return PlayerControls(
-                      controller: _videoPlayerController,
-                      videoStreams: widget.videoStreams,
-                      videoTitle: widget.videoTitle,
-                      onSourceChanged: _changeSource,
-                      onLock: _toggleLock,
-                      onResize: _toggleFit,
-                      isInitialized: value.isInitialized,
-                      onBack: _onWillPop,
-                    );
-                  }),
-              ),
-              ValueListenableBuilder<VlcPlayerValue>(
-                valueListenable: _videoPlayerController,
-                builder: (context, value, child) {
-                  final showLoading = value.isBuffering || !value.isInitialized || !value.isPlaying;
-                  return showLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : const SizedBox.shrink();
-                },
+                child: _showControls
+                    ? CustomVideoControls(
+                        controller: _controller,
+                        videoStreams: widget.videoStreams,
+                        videoTitle: widget.videoTitle,
+                        onSourceChanged: (url) {
+                          _controller.setupDataSource(
+                            BetterPlayerDataSource(
+                              BetterPlayerDataSourceType.network,
+                              url,
+                              headers: widget.headers,
+                            ),
+                          );
+                        },
+                        onLock: _toggleLock,
+                        isLocked: _isLocked,
+                        onResize: _toggleFit,
+                        onBack: _onWillPop,
+                        onOptionsVisibilityChanged: (visible) {
+                          if (visible) {
+                            _controlsTimer?.cancel();
+                          } else {
+                            _startControlsTimer();
+                          }
+                        },
+                      )
+                    : const SizedBox.shrink(),
               ),
               if (_feedbackText != null)
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.black.withAlpha(150),
                       borderRadius: BorderRadius.circular(8),
@@ -347,26 +256,10 @@ Future<void> _changeSource(String url) async {
                         if (_seekIcon != null)
                           Icon(_seekIcon, color: Colors.white, size: 20),
                         if (_seekIcon != null) const SizedBox(width: 8),
-                        Text(
-                          _feedbackText!,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
-                        ),
+                        Text(_feedbackText!,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16)),
                       ],
-                    ),
-                  ),
-                ),
-              if (_isLocked)
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _toggleLock,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.lock, color: Colors.white, size: 30),
-                      ),
                     ),
                   ),
                 ),
@@ -374,365 +267,6 @@ Future<void> _changeSource(String url) async {
           ),
         ),
       ),
-    );
-  }
-}
-
-class PlayerControls extends StatelessWidget {
-  final VlcPlayerController controller;
-  final List<VideoStream>? videoStreams;
-  final String? videoTitle;
-  final ValueChanged<String> onSourceChanged;
-  final VoidCallback onLock;
-  final VoidCallback onResize;
-  final bool isInitialized;
-  final Future<bool> Function()? onBack; // <-- Add this
-
-
-  const PlayerControls({
-    super.key,
-    required this.controller,
-    required this.videoStreams,
-    required this.videoTitle,
-    required this.onSourceChanged,
-    required this.onLock,
-    required this.onResize,
-    required this.isInitialized,
-    this.onBack
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final disabledColor = Colors.white.withOpacity(0.5);
-    final enabledColor = Colors.white;
-
-    return Container(
-      color: Colors.black.withAlpha(150),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Top controls (e.g., title, back button)
-          Row(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () async {
-                    if (onBack != null) {
-                      final canPop = await onBack!();
-                      if (canPop && context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    }
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  videoTitle ?? '',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onLock,
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Icon(Icons.lock_open, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Middle controls (play/pause)
-          Center(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: isInitialized
-                    ? () {
-                        controller.value.isPlaying
-                            ? controller.pause()
-                            : controller.play();
-                      }
-                    : null,
-                child: ValueListenableBuilder<VlcPlayerValue>(
-                  valueListenable: controller,
-                  builder: (context, value, child) {
-                    final showLoading = value.isBuffering || !value.isPlaying;
-                    if (showLoading) {
-                      return const SizedBox.shrink();
-                    }
-                    return Icon(
-                      value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      size: 50,
-                      color: isInitialized ? enabledColor : disabledColor,
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-          // Bottom controls (progress bar, source/audio selection)
-          Column(
-            children: [
-              VlcPlayerProgressBar(controller: controller),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Source selection button
-                  if (videoStreams != null && videoStreams!.length > 1)
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: isInitialized
-                            ? () => _showSourceSelectionDialog(context)
-                            : null,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.source,
-                                  color: isInitialized
-                                      ? enabledColor
-                                      : disabledColor),
-                              const SizedBox(width: 8),
-                              Text('Source',
-                                  style: TextStyle(
-                                      color: isInitialized
-                                          ? enabledColor
-                                          : disabledColor)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  // Audio track selection button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: isInitialized
-                          ? () => _showAudioTrackSelectionDialog(context)
-                          : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.audiotrack,
-                                color: isInitialized
-                                    ? enabledColor
-                                    : disabledColor),
-                            const SizedBox(width: 8),
-                            Text('Audio',
-                                style: TextStyle(
-                                    color: isInitialized
-                                        ? enabledColor
-                                        : disabledColor)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Subtitle selection button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: isInitialized
-                          ? () => _showSubtitleSelectionDialog(context)
-                          : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.subtitles,
-                                color: isInitialized
-                                    ? enabledColor
-                                    : disabledColor),
-                            const SizedBox(width: 8),
-                            Text('Subtitles',
-                                style: TextStyle(
-                                    color: isInitialized
-                                        ? enabledColor
-                                        : disabledColor)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Resize button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: onResize,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.aspect_ratio,
-                                color: Colors.white),
-                            const SizedBox(width: 8),
-                            const Text('Resize',
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSourceSelectionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Source'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: videoStreams!.length,
-              itemBuilder: (context, index) {
-                final stream = videoStreams![index];
-                return RadioListTile(
-                  title: Text(stream.quality),
-                  value: stream.url,
-                  groupValue: controller.dataSource,
-                  onChanged: (value) {
-                    onSourceChanged(value.toString());
-                    if (Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAudioTrackSelectionDialog(BuildContext context) async {
-    final audioTracks = await controller.getAudioTracks();
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Audio Track'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: audioTracks.length,
-              itemBuilder: (context, index) {
-                final trackId = audioTracks.keys.elementAt(index);
-                final trackName = audioTracks.values.elementAt(index);
-                return RadioListTile<int>(
-                  title: Text(trackName),
-                  value: trackId,
-                  groupValue: controller.value.activeAudioTrack,
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.setAudioTrack(value);
-                    }
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showSubtitleSelectionDialog(BuildContext context) async {
-    final subtitles = await controller.getSpuTracks();
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Subtitle'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: subtitles.length,
-              itemBuilder: (context, index) {
-                final trackId = subtitles.keys.elementAt(index);
-                final trackName = subtitles.values.elementAt(index);
-                return RadioListTile<int>(
-                  title: Text(trackName),
-                  value: trackId,
-                  groupValue: controller.value.activeSpuTrack,
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.setSpuTrack(value);
-                    }
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class VlcPlayerProgressBar extends StatefulWidget {
-  final VlcPlayerController controller;
-
-  const VlcPlayerProgressBar({super.key, required this.controller});
-
-  @override
-  State<VlcPlayerProgressBar> createState() => _VlcPlayerProgressBarState();
-}
-
-class _VlcPlayerProgressBarState extends State<VlcPlayerProgressBar> {
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<VlcPlayerValue>(
-      valueListenable: widget.controller,
-      builder: (context, value, child) {
-        final position = value.position.inMilliseconds.toDouble();
-        final duration = value.duration.inMilliseconds.toDouble();
-
-        // Clamp position between 0 and duration
-        final safePosition = (duration > 0)
-            ? position.clamp(0.0, duration)
-            : 0.0;
-
-        return Slider(
-          value: safePosition,
-          min: 0,
-          max: duration > 0 ? duration : 1, // avoid max=0
-          onChanged: (duration > 0)
-              ? (v) {
-                  widget.controller.seekTo(Duration(milliseconds: v.toInt()));
-                }
-              : null, // disable slider if duration is zero
-        );
-      },
     );
   }
 }
