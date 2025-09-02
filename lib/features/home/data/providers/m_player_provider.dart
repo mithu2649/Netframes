@@ -8,6 +8,8 @@ import 'package:netframes/features/home/domain/entities/netflix_movie_details.da
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
 
 class MPlayerProvider implements StreamingProvider {
+  @override
+  String get name => 'MPlayer';
   final String _mainUrl = "https://www.mxplayer.in";
   final String _webApi = "https://api.mxplayer.in/v1/web";
   final String _imageUrl = "https://qqcdnpictest.mxplay.com/";
@@ -330,7 +332,7 @@ class _Item {
     }
 
     if (kDebugMode) {
-      print('[MPlayerProvider] Final Poster URL for ${title}: $posterUrl');
+      print('[MPlayerProvider] Final Poster URL for $title: $posterUrl');
     }
 
     return Movie(
@@ -423,7 +425,7 @@ class _MovieItem {
     }
 
     if (kDebugMode) {
-      print('[MPlayerProvider] Final Poster URL for ${title}: $posterUrl');
+      print('[MPlayerProvider] Final Poster URL for $title: $posterUrl');
     }
 
     return Movie(

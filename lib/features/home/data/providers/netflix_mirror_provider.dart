@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:html/parser.dart' as parser;
 
 class NetflixMirrorProvider implements StreamingProvider {
+  String get name => 'Netflix';
   final String _baseUrl = "https://net2025.cc";
   String _cookie = "";
   static const String _cookieKey = 'netflix_cookie';
@@ -431,7 +432,7 @@ class NetflixMirrorProvider implements StreamingProvider {
               headers: videoHeaders,
             ),
           );
-          print('Subtitle found: $subtitleUrl');
+
         }
       } catch (e) {
         if (kDebugMode) {

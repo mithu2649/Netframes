@@ -72,6 +72,8 @@ class Video {
 }
 
 class DramaDripProvider implements StreamingProvider {
+  @override
+  String get name => 'DramaDrip';
   String _baseUrl = "https://dramadrip.com";
   final String _cinemetaUrl = "https://v3-cinemeta.strem.io/meta";
   static const String _domainsUrl =
@@ -352,7 +354,7 @@ class DramaDripProvider implements StreamingProvider {
                   .querySelectorAll("a")
                   .where(
                     (el) => RegExp(
-                      r'(Episode|Ep|E)?\s*0*\d+',
+                      r'(Episode|Ep|E)?\s*0*([0-9]+)',
                       caseSensitive: false,
                     ).hasMatch(el.text),
                   );
@@ -603,8 +605,8 @@ class DramaDripProvider implements StreamingProvider {
                 '';
             final path =
                 RegExp(
-                  r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'\)",
-                ).firstMatch(docString)?.group(1) ??
+                  r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'")
+                    .firstMatch(docString)?.group(1) ??
                 '';
             final baseUrl = href.split("/download")[0];
 
@@ -762,9 +764,10 @@ class DramaDripProvider implements StreamingProvider {
 
   @override
   Future<Map<String, dynamic>> loadLink(
-    Movie movie, {
+    Movie movie,
+    {
     NetflixEpisode? episode,
-  }) async {
+  } ) async {
     if (episode == null) return {};
 
     final List<String> links = List<String>.from(jsonDecode(episode.id));

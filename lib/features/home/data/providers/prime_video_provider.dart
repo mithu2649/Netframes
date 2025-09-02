@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:html/parser.dart' as parser;
 
 class PrimeVideoProvider implements StreamingProvider {
+  String get name => 'PrimeVideo';
   final String _baseUrl = "https://net2025.cc";
   String _cookie = "";
   static const String _cookieKey = 'prime_video_cookie';

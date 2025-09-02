@@ -103,110 +103,125 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
               } else if (state is StreamingMovieDetailsLoaded) {
                 final details = state.movieDetails;
                 return SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          details.title,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.movie.backdropPath != '' && widget.movie.backdropPath.isNotEmpty)
+                        Image.network(
+                          widget.movie.backdropPath,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 250,
+                        )
+                      else if (widget.movie.posterPath.isNotEmpty)
+                        Image.network(
+                          widget.movie.posterPath,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 250,
                         ),
-                        const SizedBox(height: 8),
-                        Text('Year: ${details.year} • ${details.runtime}'),
-
-                        const SizedBox(height: 8),
-                        Text('Plot: ${details.plot}'),
-                        const SizedBox(height: 8),
-                        if (details.cast.isNotEmpty)
-                          RichText(
-                            text: TextSpan(
-                              style: Theme.of(context).textTheme.bodyMedium,
-                              children: <TextSpan>[
-                                TextSpan(
-                                  text: 'Cast: ',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                TextSpan(
-                                  text: details.cast.join(', '),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              details.title,
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
-                          ),
-                        const SizedBox(height: 16),
-                        if (details.type == NetflixContentType.tvShow)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Seasons',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: List<Widget>.generate(
-                                    details.seasons.length,
-                                    (int index) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4.0,
-                                        ),
-                                        child: ChoiceChip(
-                                          padding: const EdgeInsets.all(9.0),
-                                          label: Text(
-                                            'Season ${details.seasons[index].season}',
-                                          ),
-                                          selected:
-                                              _selectedSeasonIndex == index,
-                                          onSelected: (bool selected) {
-                                            if (selected) {
-                                              setState(() {
-                                                _selectedSeasonIndex = index;
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ).toList(),
+                            const SizedBox(height: 8),
+                            Text('Year: ${details.year} • ${details.runtime}'),
+                            const SizedBox(height: 8),
+                            Text('Plot: ${details.plot}'),
+                            const SizedBox(height: 8),
+                            if (details.cast.isNotEmpty)
+                              RichText(
+                                text: TextSpan(
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: 'Cast: ',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    TextSpan(
+                                      text: details.cast.join(', '),
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Episodes',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: details.seasons.isEmpty
-                                    ? 0
-                                    : details
+                            const SizedBox(height: 16),
+                            if (details.type == NetflixContentType.tvShow)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Seasons',
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: List<Widget>.generate(
+                                        details.seasons.length,
+                                        (int index) {
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4.0,
+                                            ),
+                                            child: ChoiceChip(
+                                              padding: const EdgeInsets.all(9.0),
+                                              label: Text(
+                                                'Season ${details.seasons[index].season}',
+                                              ),
+                                              selected:
+                                                  _selectedSeasonIndex == index,
+                                              onSelected: (bool selected) {
+                                                if (selected) {
+                                                  setState(() {
+                                                    _selectedSeasonIndex = index;
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      ).toList(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Episodes',
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: details.seasons.isEmpty
+                                        ? 0
+                                        : details
+                                            .seasons[_selectedSeasonIndex]
+                                            .episodes
+                                            .length,
+                                    itemBuilder: (context, index) {
+                                      final episode = details
                                           .seasons[_selectedSeasonIndex]
-                                          .episodes
-                                          .length,
-                                itemBuilder: (context, index) {
-                                  final episode = details
-                                      .seasons[_selectedSeasonIndex]
-                                      .episodes[index];
-                                  return ListTile(
-                                    leading: SizedBox(
-                                      width: 100,
-                                      height: 100,
-                                      child: episode.thumbnail != null
-                                          ? Image.network(
-                                              episode.thumbnail!,
-                                              fit: BoxFit.cover,
-                                              loadingBuilder:
-                                                  (
+                                          .episodes[index];
+                                      return ListTile(
+                                        leading: SizedBox(
+                                          width: 100,
+                                          height: 100,
+                                          child: episode.thumbnail != null
+                                              ? Image.network(
+                                                  episode.thumbnail!,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (
                                                     BuildContext context,
                                                     Widget child,
                                                     ImageChunkEvent?
-                                                    loadingProgress,
+                                                        loadingProgress,
                                                   ) {
                                                     if (loadingProgress == null) {
                                                       return child;
@@ -216,184 +231,186 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                           CircularProgressIndicator(),
                                                     );
                                                   },
-                                              errorBuilder:
-                                                  (
+                                                  errorBuilder: (
                                                     context,
                                                     error,
                                                     stackTrace,
-                                                  ) => const Icon(Icons.error),
-                                            )
-                                          : const Icon(
-                                              Icons.image_not_supported,
-                                            ),
-                                    ),
-                                    title: Text(episode.title),
-                                    subtitle: Text(
-                                      'Season ${episode.season}, Episode ${episode.episode}',
-                                    ),
-                                    onTap: () async {
-                                      try {
-                                        final episodeMovie = Movie(
-                                          id: episode.id,
-                                          title: episode.title,
-                                          overview: details.plot,
-                                          posterPath: widget.movie.posterPath,
-                                          backdropPath:
-                                              widget.movie.backdropPath,
-                                          voteAverage: 0.0,
-                                          provider: widget.movie.provider,
-                                        );
-                                        dynamic result;
-                                        if (widget.movie.provider ==
-                                            'Netflix') {
-                                          result = await context
-                                              .read<HomeBloc>()
-                                              .netflixMirrorProvider
-                                              .loadLink(
-                                                episodeMovie,
-                                                episode: episode,
+                                                  ) =>
+                                                      const Icon(Icons.error),
+                                                )
+                                              : const Icon(
+                                                  Icons.image_not_supported,
+                                                ),
+                                        ),
+                                        title: Text(episode.title),
+                                        subtitle: Text(
+                                          'Season ${episode.season}, Episode ${episode.episode}',
+                                        ),
+                                        onTap: () async {
+                                          try {
+                                            final episodeMovie = Movie(
+                                              id: episode.id,
+                                              title: episode.title,
+                                              overview: details.plot,
+                                              posterPath: widget.movie.posterPath,
+                                              backdropPath:
+                                                  widget.movie.backdropPath,
+                                              voteAverage: 0.0,
+                                              provider: widget.movie.provider,
+                                            );
+                                            dynamic result;
+                                            if (widget.movie.provider ==
+                                                'Netflix') {
+                                              result = await context
+                                                  .read<HomeBloc>()
+                                                  .netflixMirrorProvider
+                                                  .loadLink(
+                                                    episodeMovie,
+                                                    episode: episode,
+                                                  );
+                                            } else if (widget.movie.provider ==
+                                                'JioHotstar') {
+                                              result = await context
+                                                  .read<HomeBloc>()
+                                                  .jioHotstarProvider
+                                                  .loadLink(
+                                                    episodeMovie,
+                                                    episode: episode,
+                                                  );
+                                            } else if (widget.movie.provider ==
+                                                'PrimeVideo') {
+                                              result = await context
+                                                  .read<HomeBloc>()
+                                                  .primeVideoProvider
+                                                  .loadLink(
+                                                    episodeMovie,
+                                                    episode: episode,
+                                                  );
+                                            } else if (widget.movie.provider ==
+                                                'DramaDrip') {
+                                              result = await context
+                                                  .read<HomeBloc>()
+                                                  .dramaDripProvider
+                                                  .loadLink(
+                                                    episodeMovie,
+                                                    episode: episode,
+                                                  );
+                                            } else if (widget.movie.provider ==
+                                                'MPlayer') {
+                                              result = await context
+                                                  .read<HomeBloc>()
+                                                  .mPlayerProvider
+                                                  .loadLink(
+                                                    episodeMovie,
+                                                    episode: episode,
+                                                  );
+                                            }
+                                            if (result != null &&
+                                                result['streams'] != null) {
+                                              final streams =
+                                                  result['streams']
+                                                      as List<VideoStream>;
+                                              _playVideo(context, streams);
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('No streams found'),
+                                                ),
                                               );
-                                        } else if (widget.movie.provider ==
-                                            'JioHotstar') {
-                                          result = await context
-                                              .read<HomeBloc>()
-                                              .jioHotstarProvider
-                                              .loadLink(
-                                                episodeMovie,
-                                                episode: episode,
-                                              );
-                                        } else if (widget.movie.provider ==
-                                            'PrimeVideo') {
-                                          result = await context
-                                              .read<HomeBloc>()
-                                              .primeVideoProvider
-                                              .loadLink(
-                                                episodeMovie,
-                                                episode: episode,
-                                              );
-                                        } else if (widget.movie.provider ==
-                                            'DramaDrip') {
-                                          result = await context
-                                              .read<HomeBloc>()
-                                              .dramaDripProvider
-                                              .loadLink(
-                                                episodeMovie,
-                                                episode: episode,
-                                              );
-                                        } else if (widget.movie.provider ==
-                                            'MPlayer') {
-                                          result = await context
-                                              .read<HomeBloc>()
-                                              .mPlayerProvider
-                                              .loadLink(
-                                                episodeMovie,
-                                                episode: episode,
-                                              );
-                                        }
-                                        if (result != null &&
-                                            result['streams'] != null) {
-                                          final streams =
-                                              result['streams']
-                                                  as List<VideoStream>;
-                                          _playVideo(context, streams);
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('No streams found'),
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Error loading streams: $e',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
-                          )
-                        else
-                          ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                final movieWithTitle = Movie(
-                                  id: widget.movie.id,
-                                  title: details.title,
-                                  overview: details.plot,
-                                  posterPath: widget.movie.posterPath,
-                                  backdropPath: widget.movie.backdropPath,
-                                  voteAverage: 0.0,
-                                  provider: widget.movie.provider,
-                                );
-                                dynamic result;
-                                if (widget.movie.provider == 'Netflix') {
-                                  result = await context
-                                      .read<HomeBloc>()
-                                      .netflixMirrorProvider
-                                      .loadLink(movieWithTitle);
-                                } else if (widget.movie.provider ==
-                                    'JioHotstar') {
-                                  result = await context
-                                      .read<HomeBloc>()
-                                      .jioHotstarProvider
-                                      .loadLink(movieWithTitle);
-                                } else if (widget.movie.provider ==
-                                    'PrimeVideo') {
-                                  result = await context
-                                      .read<HomeBloc>()
-                                      .primeVideoProvider
-                                      .loadLink(movieWithTitle);
-                                } else if (widget.movie.provider ==
-                                    'DramaDrip') {
-                                  final episode =
-                                      details.seasons.first.episodes.first;
-                                  result = await context
-                                      .read<HomeBloc>()
-                                      .dramaDripProvider
-                                      .loadLink(
-                                        movieWithTitle,
-                                        episode: episode,
+                                            }
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Error loading streams: $e',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
                                       );
-                                } else if (widget.movie.provider == 'MPlayer') {
-                                  result = await context
-                                      .read<HomeBloc>()
-                                      .mPlayerProvider
-                                      .loadLink(movieWithTitle);
-                                }
-                                if (result != null &&
-                                    result['streams'] != null) {
-                                  final streams =
-                                      result['streams'] as List<VideoStream>;
-                                  _playVideo(context, streams);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('No streams found'),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error loading streams: $e'),
+                                    },
                                   ),
-                                );
-                              }
-                            },
-                            child: const Text('Play'),
-                          ),
-                      ],
-                    ),
+                                ],
+                              )
+                            else
+                              ElevatedButton(
+                                onPressed: () async {
+                                  try {
+                                    final movieWithTitle = Movie(
+                                      id: widget.movie.id,
+                                      title: details.title,
+                                      overview: details.plot,
+                                      posterPath: widget.movie.posterPath,
+                                      backdropPath: widget.movie.backdropPath,
+                                      voteAverage: 0.0,
+                                      provider: widget.movie.provider,
+                                    );
+                                    dynamic result;
+                                    if (widget.movie.provider == 'Netflix') {
+                                      result = await context
+                                          .read<HomeBloc>()
+                                          .netflixMirrorProvider
+                                          .loadLink(movieWithTitle);
+                                    } else if (widget.movie.provider ==
+                                        'JioHotstar') {
+                                      result = await context
+                                          .read<HomeBloc>()
+                                          .jioHotstarProvider
+                                          .loadLink(movieWithTitle);
+                                    } else if (widget.movie.provider ==
+                                        'PrimeVideo') {
+                                      result = await context
+                                          .read<HomeBloc>()
+                                          .primeVideoProvider
+                                          .loadLink(movieWithTitle);
+                                    } else if (widget.movie.provider ==
+                                        'DramaDrip') {
+                                      final episode =
+                                          details.seasons.first.episodes.first;
+                                      result = await context
+                                          .read<HomeBloc>()
+                                          .dramaDripProvider
+                                          .loadLink(
+                                            movieWithTitle,
+                                            episode: episode,
+                                          );
+                                    } else if (widget.movie.provider == 'MPlayer') {
+                                      result = await context
+                                          .read<HomeBloc>()
+                                          .mPlayerProvider
+                                          .loadLink(movieWithTitle);
+                                    }
+                                    if (result != null &&
+                                        result['streams'] != null) {
+                                      final streams =
+                                          result['streams'] as List<VideoStream>;
+                                      _playVideo(context, streams);
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('No streams found'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error loading streams: $e'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text('Play'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
               } else if (state is StreamingMovieDetailsError) {
