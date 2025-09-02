@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
             primeVideoProvider: primeVideoProvider,
             dramaDripProvider: dramaDripProvider,
             mPlayerProvider: mPlayerProvider,
-          )..add(const FetchHomeData('PrimeVideo')),
+          )..add(const FetchHomeData('Netflix')),
         ),
         BlocProvider(
           create: (context) => ThemeBloc(themeService: ThemeService()),

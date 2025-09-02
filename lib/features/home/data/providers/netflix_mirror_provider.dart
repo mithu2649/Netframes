@@ -97,8 +97,8 @@ class NetflixMirrorProvider implements StreamingProvider {
   Map<String, String> get _apiHeaders {
     return {
       ..._headers,
-      'Cookie': 't_hash_t=$_cookie; ott=nf; hd=on',
-      'Referer': '$_baseUrl/home',
+      'Cookie': 't_hash_t=$_cookie; user_token=1fe232a3c19230c5d7282d426351d1a3; ott=nf; hd=on',
+      'Referer': '$_baseUrl/',
     };
   }
 
@@ -110,40 +110,91 @@ class NetflixMirrorProvider implements StreamingProvider {
       headers: _apiHeaders,
     );
 
-    if (response.statusCode == 200) {
-      final document = parser.parse(response.body);
-      final Map<String, List<Movie>> homePageData = {};
+    // if (response.statusCode == 200) {
+    //   final document = parser.parse(response.body);
+    //   final Map<String, List<Movie>> homePageData = {};
 
-      final rows = document.querySelectorAll('.lolomoRow');
-      for (var row in rows) {
-        final title =
-            row.querySelector('h2 > span > div')?.text.trim() ?? 'Unknown';
-        final movies = <Movie>[];
-        final movieElements = row.querySelectorAll('img.lazy');
-        for (var movieElement in movieElements) {
-          final id = movieElement.attributes['data-src']
-              ?.split('/')
-              .last
-              .split('.')
-              .first;
-          if (id != null) {
-            movies.add(
-              Movie(
-                id: id,
-                title: '',
-                overview: '',
-                posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
-                backdropPath: '',
-                voteAverage: 0.0,
-                provider: 'Netflix',
-              ),
-            );
-          }
-        }
-        homePageData[title] = movies;
-      }
-      return homePageData;
-    } else {
+    //   final rows = document.querySelectorAll('.lolomoRow');
+    //   for (var row in rows) {
+    //     final title =
+    //         row.querySelector('h2 > span > div')?.text.trim() ?? 'Curated By Netflix';
+    //     final movies = <Movie>[];
+    //     final movieElements = row.querySelectorAll('img.lazy');
+    //     for (var movieElement in movieElements) {
+    //       final id = movieElement.attributes['data-src']
+    //           ?.split('/')
+    //           .last
+    //           .split('.')
+    //           .first;
+    //       if (id != null) {
+    //         movies.add(
+    //           Movie(
+    //             id: id,
+    //             title: '',
+    //             overview: '',
+    //             posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
+    //             backdropPath: 'https://imgcdn.media/poster/h/$id.jpg',
+    //             voteAverage: 0.0,
+    //             provider: 'Netflix',
+    //           ),
+    //         );
+    //       }
+    //     }
+    //     homePageData[title] = movies;
+    //   }
+    //   return homePageData;
+    // } 
+    if (response.statusCode == 200) {
+  final document = parser.parse(response.body);
+  final Map<String, List<Movie>> homePageData = {};
+
+  final rows = document.querySelectorAll('.lolomoRow');
+  for (var row in rows) {
+    // More flexible title lookup with fallbacks
+    final titleElement = row.querySelector('h2 > span > div') ??
+        row.querySelector('h2 > span') ??
+        row.querySelector('h2') ??
+        row.querySelector('.rowHeader');
+
+    final title = titleElement?.text.trim().isNotEmpty == true
+        ? titleElement!.text.trim()
+        : 'Curated By Netflix';
+
+    final movies = <Movie>[];
+
+    // Match all possible image sources (lazy / src / data-lazy)
+    final movieElements = row.querySelectorAll('img');
+    for (var movieElement in movieElements) {
+      final src = movieElement.attributes['data-src'] ??
+          movieElement.attributes['data-lazy'] ??
+          movieElement.attributes['src'];
+
+      if (src == null || src.isEmpty) continue;
+
+      final id = src.split('/').last.split('.').first;
+      if (id.isEmpty) continue;
+
+      movies.add(
+        Movie(
+          id: id,
+          title: '',
+          overview: '',
+          posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
+          backdropPath: 'https://imgcdn.media/poster/h/$id.jpg',
+          voteAverage: 0.0,
+          provider: 'Netflix',
+        ),
+      );
+    }
+
+    if (movies.isNotEmpty) {
+      homePageData[title] = movies;
+    }
+  }
+  return homePageData;
+}
+
+    else {
       throw Exception('Failed to load home page');
     }
   }
@@ -380,6 +431,7 @@ class NetflixMirrorProvider implements StreamingProvider {
               headers: videoHeaders,
             ),
           );
+          print('Subtitle found: $subtitleUrl');
         }
       } catch (e) {
         if (kDebugMode) {
