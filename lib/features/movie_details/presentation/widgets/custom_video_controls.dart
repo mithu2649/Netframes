@@ -47,13 +47,10 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _animation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
+    _animation = Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+        );
   }
 
   @override
@@ -100,9 +97,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
     return Stack(
       children: [
         if (_latestValue.isBuffering)
-          const Center(
-            child: CircularProgressIndicator(),
-          )
+          const Center(child: CircularProgressIndicator())
         else
           GestureDetector(
             onTap: () {
@@ -133,19 +128,30 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(8.0),
-                              child: Icon(Icons.arrow_back, color: Colors.white),
+                              child: Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                         Expanded(
-                          child: Text(widget.videoTitle ?? '',
-                              style: const TextStyle(color: Colors.white, fontSize: 18),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            widget.videoTitle ?? '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         IconButton(
-                          icon: Icon(widget.isLocked ? Icons.lock : Icons.lock_open, color: Colors.white),
+                          icon: Icon(
+                            widget.isLocked ? Icons.lock : Icons.lock_open,
+                            color: Colors.white,
+                          ),
                           onPressed: widget.onLock,
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -183,14 +189,22 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                             Expanded(
                               child: SliderTheme(
                                 data: SliderTheme.of(context).copyWith(
-                                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 15.0),
+                                  thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6.0,
+                                  ),
+                                  overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 15.0,
+                                  ),
                                   trackHeight: 2.0,
                                 ),
                                 child: Slider(
-                                  value: _latestValue.position.inMilliseconds.toDouble(),
+                                  value: _latestValue.position.inMilliseconds
+                                      .toDouble(),
                                   min: 0.0,
-                                  max: (_latestValue.duration?.inMilliseconds ?? 0).toDouble(),
+                                  max:
+                                      (_latestValue.duration?.inMilliseconds ??
+                                              0)
+                                          .toDouble(),
                                   activeColor: Colors.red,
                                   inactiveColor: Colors.white70,
                                   onChanged: (value) {
@@ -200,21 +214,28 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                                       });
                                     }
                                     setState(() {
-                                       _latestValue = _latestValue.copyWith(
-                                          position: Duration(milliseconds: value.round()));
+                                      _latestValue = _latestValue.copyWith(
+                                        position: Duration(
+                                          milliseconds: value.round(),
+                                        ),
+                                      );
                                     });
                                   },
                                   onChangeEnd: (value) {
                                     setState(() {
                                       _dragging = false;
                                     });
-                                    widget.controller.seekTo(Duration(milliseconds: value.round()));
+                                    widget.controller.seekTo(
+                                      Duration(milliseconds: value.round()),
+                                    );
                                   },
                                 ),
                               ),
                             ),
                             Text(
-                              _formatDuration(_latestValue.duration ?? Duration.zero),
+                              _formatDuration(
+                                _latestValue.duration ?? Duration.zero,
+                              ),
                               style: const TextStyle(color: Colors.white),
                             ),
                           ],
@@ -223,45 +244,82 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          if (widget.videoStreams != null && widget.videoStreams!.length > 1)
+                          if (widget.videoStreams != null &&
+                              widget.videoStreams!.length > 1)
                             TextButton.icon(
-                              icon: const Icon(Icons.source, color: Colors.white),
-                              label: const Text("Source",
-                                  style: TextStyle(color: Colors.white)),
+                              icon: const Icon(
+                                Icons.source,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Source",
+                                style: TextStyle(color: Colors.white),
+                              ),
                               onPressed: () => _toggleOptions('source'),
                             ),
-                          if (widget.controller.betterPlayerAsmsTracks.isNotEmpty)
+                          if (widget
+                              .controller
+                              .betterPlayerAsmsTracks
+                              .isNotEmpty)
                             TextButton.icon(
-                              icon: const Icon(Icons.high_quality, color: Colors.white),
-                              label: const Text("Quality",
-                                  style: TextStyle(color: Colors.white)),
+                              icon: const Icon(
+                                Icons.high_quality,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Quality",
+                                style: TextStyle(color: Colors.white),
+                              ),
                               onPressed: () => _toggleOptions('quality'),
                             ),
-                          if (widget.controller.betterPlayerAsmsAudioTracks != null &&
-                              widget.controller.betterPlayerAsmsAudioTracks!.length > 1)
+                          if (widget.controller.betterPlayerAsmsAudioTracks !=
+                                  null &&
+                              widget
+                                      .controller
+                                      .betterPlayerAsmsAudioTracks!
+                                      .length >
+                                  1)
                             TextButton.icon(
-                              icon: const Icon(Icons.audiotrack, color: Colors.white),
-                              label: const Text("Audio",
-                                  style: TextStyle(color: Colors.white)),
+                              icon: const Icon(
+                                Icons.audiotrack,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Audio",
+                                style: TextStyle(color: Colors.white),
+                              ),
                               onPressed: () => _toggleOptions('audio'),
                             ),
-                          if (widget.controller.betterPlayerSubtitlesSourceList.isNotEmpty)
+                          if (widget
+                              .controller
+                              .betterPlayerSubtitlesSourceList
+                              .isNotEmpty)
                             TextButton.icon(
-                              icon: const Icon(Icons.subtitles, color: Colors.white),
-                              label: const Text("Subtitles",
-                                  style: TextStyle(color: Colors.white)),
+                              icon: const Icon(
+                                Icons.subtitles,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Subtitles",
+                                style: TextStyle(color: Colors.white),
+                              ),
                               onPressed: () => _toggleOptions('subtitles'),
                             ),
                           TextButton.icon(
-                            icon: const Icon(Icons.aspect_ratio, color: Colors.white),
-                            label: const Text("Resize",
-                                style: TextStyle(color: Colors.white)),
+                            icon: const Icon(
+                              Icons.aspect_ratio,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Resize",
+                              style: TextStyle(color: Colors.white),
+                            ),
                             onPressed: widget.onResize,
                           ),
                         ],
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -291,22 +349,27 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       case 'source':
         return ListView(
           children: widget.videoStreams!
-              .map((s) => InkWell(
-                    onTap: () {
-                      widget.onSourceChanged(s.url);
+              .map(
+                (s) => InkWell(
+                  onTap: () {
+                    widget.onSourceChanged(s.url);
+                    _toggleOptions(null);
+                  },
+                  child: RadioListTile(
+                    title: Text(
+                      s.quality,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    value: s.url,
+                    groupValue: widget.controller.betterPlayerDataSource?.url,
+                    onChanged: (value) {
+                      widget.onSourceChanged(value.toString());
                       _toggleOptions(null);
                     },
-                    child: RadioListTile(
-                      title: Text(s.quality, style: const TextStyle(color: Colors.white)),
-                      value: s.url,
-                      groupValue: widget.controller.betterPlayerDataSource?.url,
-                      onChanged: (value) {
-                        widget.onSourceChanged(value.toString());
-                        _toggleOptions(null);
-                      },
-                      selectedTileColor: Colors.white.withOpacity(0.2),
-                    ),
-                  ))
+                    selectedTileColor: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+              )
               .toList(),
         );
       case 'quality':
@@ -319,7 +382,10 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                 _toggleOptions(null);
               },
               child: RadioListTile<BetterPlayerAsmsTrack>(
-                title: Text("${height}p", style: const TextStyle(color: Colors.white)),
+                title: Text(
+                  "${height}p",
+                  style: const TextStyle(color: Colors.white),
+                ),
                 value: track,
                 groupValue: widget.controller.betterPlayerAsmsTrack,
                 onChanged: (value) {
@@ -335,32 +401,33 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
         );
       case 'audio':
         return ListView(
-          children: widget.controller.betterPlayerAsmsAudioTracks!
-              .map((audio) {
-                String trackName = audio.label ?? 'Unknown';
-                if (trackName.toLowerCase().contains('stream')) {
-                  trackName = audio.language ?? trackName;
-                }
-                return InkWell(
-                  onTap: () {
-                    widget.controller.setAudioTrack(audio);
-                    _toggleOptions(null);
-                  },
-                  child: RadioListTile(
-                    title: Text(trackName, style: const TextStyle(color: Colors.white)),
-                    value: audio,
-                    groupValue: widget.controller.betterPlayerAsmsAudioTrack,
-                    onChanged: (value) {
-                      if (value != null) {
-                        widget.controller.setAudioTrack(value);
-                      }
-                      _toggleOptions(null);
-                    },
-                    selectedTileColor: Colors.white.withOpacity(0.2),
-                  ),
-                );
-              })
-              .toList(),
+          children: widget.controller.betterPlayerAsmsAudioTracks!.map((audio) {
+            String trackName = audio.label ?? 'Unknown';
+            if (trackName.toLowerCase().contains('stream')) {
+              trackName = audio.language ?? trackName;
+            }
+            return InkWell(
+              onTap: () {
+                widget.controller.setAudioTrack(audio);
+                _toggleOptions(null);
+              },
+              child: RadioListTile(
+                title: Text(
+                  trackName,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                value: audio,
+                groupValue: widget.controller.betterPlayerAsmsAudioTrack,
+                onChanged: (value) {
+                  if (value != null) {
+                    widget.controller.setAudioTrack(value);
+                  }
+                  _toggleOptions(null);
+                },
+                selectedTileColor: Colors.white.withOpacity(0.2),
+              ),
+            );
+          }).toList(),
         );
       case 'subtitles':
         final subtitles = widget.controller.betterPlayerSubtitlesSourceList;
@@ -373,17 +440,26 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
           children: [
             InkWell(
               onTap: () {
-                widget.controller.setupSubtitleSource(BetterPlayerSubtitlesSource(
-                    type: BetterPlayerSubtitlesSourceType.none));
+                widget.controller.setupSubtitleSource(
+                  BetterPlayerSubtitlesSource(
+                    type: BetterPlayerSubtitlesSourceType.none,
+                  ),
+                );
                 _toggleOptions(null);
               },
               child: RadioListTile<BetterPlayerSubtitlesSource?>(
-                title: const Text("None", style: const TextStyle(color: Colors.white)),
+                title: const Text(
+                  "None",
+                  style: const TextStyle(color: Colors.white),
+                ),
                 value: null,
                 groupValue: currentSource,
                 onChanged: (value) {
-                  widget.controller.setupSubtitleSource(BetterPlayerSubtitlesSource(
-                      type: BetterPlayerSubtitlesSourceType.none));
+                  widget.controller.setupSubtitleSource(
+                    BetterPlayerSubtitlesSource(
+                      type: BetterPlayerSubtitlesSourceType.none,
+                    ),
+                  );
                   _toggleOptions(null);
                 },
                 selectedTileColor: Colors.white.withOpacity(0.2),
@@ -396,7 +472,10 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                   _toggleOptions(null);
                 },
                 child: RadioListTile<BetterPlayerSubtitlesSource?>(
-                  title: Text(subtitle.name ?? 'Unknown', style: const TextStyle(color: Colors.white)),
+                  title: Text(
+                    subtitle.name ?? 'Unknown',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   value: subtitle,
                   groupValue: currentSource,
                   onChanged: (value) {

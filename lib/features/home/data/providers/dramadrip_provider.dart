@@ -605,8 +605,8 @@ class DramaDripProvider implements StreamingProvider {
                 '';
             final path =
                 RegExp(
-                  r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'")
-                    .firstMatch(docString)?.group(1) ??
+                  r"fetch\('\/download\?id=([a-zA-Z0-9\/+=]+)'",
+                ).firstMatch(docString)?.group(1) ??
                 '';
             final baseUrl = href.split("/download")[0];
 
@@ -764,10 +764,9 @@ class DramaDripProvider implements StreamingProvider {
 
   @override
   Future<Map<String, dynamic>> loadLink(
-    Movie movie,
-    {
+    Movie movie, {
     NetflixEpisode? episode,
-  } ) async {
+  }) async {
     if (episode == null) return {};
 
     final List<String> links = List<String>.from(jsonDecode(episode.id));

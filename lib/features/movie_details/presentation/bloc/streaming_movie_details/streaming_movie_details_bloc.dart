@@ -5,6 +5,8 @@ import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart
 import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
+import 'package:netframes/features/home/domain/entities/netflix_movie_details.dart';
+import 'package:netframes/features/home/domain/entities/video_stream.dart';
 import 'package:netframes/features/movie_details/presentation/bloc/streaming_movie_details/streaming_movie_details_event.dart';
 import 'package:netframes/features/movie_details/presentation/bloc/streaming_movie_details/streaming_movie_details_state.dart';
 
@@ -65,6 +67,59 @@ class StreamingMovieDetailsBloc
       } catch (e) {
         print('Error fetching streaming movie details: $e');
         emit(StreamingMovieDetailsError(e.toString()));
+      }
+    });
+
+    on<LoadStreamingLinks>((event, emit) async {
+      NetflixMovieDetails? details;
+      if (state is StreamingMovieDetailsLoaded) {
+        details = (state as StreamingMovieDetailsLoaded).movieDetails;
+      } else if (state is StreamingLinksLoading) {
+        details = (state as StreamingLinksLoading).movieDetails;
+      } else if (state is StreamingLinksLoaded) {
+        details = (state as StreamingLinksLoaded).movieDetails;
+      }
+
+      if (details != null) {
+        emit(StreamingLinksLoading(
+            event.episode?.id ?? event.movie.id, details));
+        try {
+          dynamic result;
+          if (event.movie.provider == 'Netflix') {
+            result = await netflixMirrorProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'JioHotstar') {
+            result = await jioHotstarProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'PrimeVideo') {
+            result = await primeVideoProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'DramaDrip') {
+            result = await dramaDripProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'MPlayer') {
+            result = await mPlayerProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          }
+          if (result != null && result['streams'] != null) {
+            final streams = result['streams'] as List<VideoStream>;
+            emit(StreamingLinksLoaded(streams, details));
+          } else {
+            emit(const StreamingLinksError('No streams found'));
+          }
+        } catch (e) {
+          emit(StreamingLinksError('Error loading streams: $e'));
+        }
       }
     });
   }

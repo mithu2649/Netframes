@@ -89,6 +89,12 @@ class MyApp extends StatelessWidget {
                 seedColor: themeState.accentColor,
               ),
               useMaterial3: true,
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: <TargetPlatform, PageTransitionsBuilder>{
+                  TargetPlatform.android:
+                      PredictiveBackPageTransitionsBuilder(),
+                },
+              ),
             ),
             darkTheme: ThemeData(
               brightness: Brightness.dark,
@@ -98,6 +104,12 @@ class MyApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: <TargetPlatform, PageTransitionsBuilder>{
+                  TargetPlatform.android:
+                      PredictiveBackPageTransitionsBuilder(),
+                },
+              ),
             ),
             home: const ShellPage(),
           );

@@ -23,7 +23,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required this.primeVideoProvider,
     required this.dramaDripProvider,
     required this.mPlayerProvider,
-  }) : super(HomeLoading()) {
+  }) : super(HomeLoading(selectedProvider: 'Netflix')) {
     on<FetchHomeData>((event, emit) async {
       try {
         if (event.provider == 'Netflix') {
@@ -64,6 +64,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     });
 
     on<SelectProvider>((event, emit) {
+      emit(HomeLoading(selectedProvider: event.provider));
       add(FetchHomeData(event.provider));
     });
   }

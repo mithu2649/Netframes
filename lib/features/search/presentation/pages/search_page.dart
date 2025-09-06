@@ -64,24 +64,29 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     setState(() {
-      _loadingStatus = Map.fromEntries(_providers.map((p) => MapEntry(p.name, true)));
+      _loadingStatus = Map.fromEntries(
+        _providers.map((p) => MapEntry(p.name, true)),
+      );
       _searchResults = {};
     });
 
     for (final provider in _providers) {
-      provider.search(query).then((results) {
-        setState(() {
-          _loadingStatus[provider.name] = false;
-          if (results.isNotEmpty) {
-            _searchResults[provider.name] = results;
-          }
-        });
-      }).catchError((error) {
-        setState(() {
-          _loadingStatus[provider.name] = false;
-        });
-        // Handle error if needed
-      });
+      provider
+          .search(query)
+          .then((results) {
+            setState(() {
+              _loadingStatus[provider.name] = false;
+              if (results.isNotEmpty) {
+                _searchResults[provider.name] = results;
+              }
+            });
+          })
+          .catchError((error) {
+            setState(() {
+              _loadingStatus[provider.name] = false;
+            });
+            // Handle error if needed
+          });
     }
   }
 
@@ -107,7 +112,8 @@ class _SearchPageState extends State<SearchPage> {
       return const Center(child: Text('Start typing to search'));
     }
 
-    if (_loadingStatus.values.every((isLoading) => !isLoading) && _searchResults.isEmpty) {
+    if (_loadingStatus.values.every((isLoading) => !isLoading) &&
+        _searchResults.isEmpty) {
       return const Center(child: Text('No results found'));
     }
 
@@ -135,7 +141,10 @@ class _SearchPageState extends State<SearchPage> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          Text(providerName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            providerName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 10),
           const SizedBox(
             width: 16,
@@ -153,7 +162,10 @@ class _SearchPageState extends State<SearchPage> {
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(providerName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text(
+            providerName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
         SizedBox(
           height: 200,
@@ -162,7 +174,11 @@ class _SearchPageState extends State<SearchPage> {
             itemCount: results.length,
             itemBuilder: (context, index) {
               final movie = results[index];
-              return MovieCard(movie: movie, index: index, categoryTitle: providerName);
+              return MovieCard(
+                movie: movie,
+                index: index,
+                categoryTitle: providerName,
+              );
             },
           ),
         ),

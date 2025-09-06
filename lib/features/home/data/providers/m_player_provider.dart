@@ -46,30 +46,61 @@ class MPlayerProvider implements StreamingProvider {
     final Map<String, List<Movie>> homePageData = {};
 
     try {
-      final dramaResponse = await http.get(Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=48efa872f6f17facebf6149dfc536ee1&type=2$_endParam"));
+      final dramaResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=48efa872f6f17facebf6149dfc536ee1&type=2$_endParam",
+        ),
+      );
       final dramaRoot = _MXPlayer.fromJson(json.decode(dramaResponse.body));
-      homePageData['Drama Shows'] = dramaRoot.items.map((e) => e.toMovie(_imageUrl)).toList();
+      homePageData['Drama Shows'] = dramaRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
 
-      final crimeResponse = await http.get(Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=b413dff55bdad743c577a8bea3b65044&type=2$_endParam"));
+      final crimeResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=b413dff55bdad743c577a8bea3b65044&type=2$_endParam",
+        ),
+      );
       final crimeRoot = _MXPlayer.fromJson(json.decode(crimeResponse.body));
-      homePageData['Crime Shows'] = crimeRoot.items.map((e) => e.toMovie(_imageUrl)).toList();
+      homePageData['Crime Shows'] = crimeRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
 
-      final thrillerResponse = await http.get(Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=2dd5daf25be5619543524f360c73c3d8&type=2$_endParam"));
-      final thrillerRoot = _MXPlayer.fromJson(json.decode(thrillerResponse.body));
-      homePageData['Thriller Shows'] = thrillerRoot.items.map((e) => e.toMovie(_imageUrl)).toList();
+      final thrillerResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=2dd5daf25be5619543524f360c73c3d8&type=2$_endParam",
+        ),
+      );
+      final thrillerRoot = _MXPlayer.fromJson(
+        json.decode(thrillerResponse.body),
+      );
+      homePageData['Thriller Shows'] = thrillerRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
 
-      final hindiMovieResponse = await http.get(Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&browseLangFilterIds=hi&type=1$_endParam"));
-      final movieRoot = _MovieRoot.fromJson(json.decode(hindiMovieResponse.body));
-      homePageData['Hindi Movies'] = movieRoot.items.map((e) => e.toMovie(_imageUrl)).toList();
+      final hindiMovieResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&browseLangFilterIds=hi&type=1$_endParam",
+        ),
+      );
+      final movieRoot = _MovieRoot.fromJson(
+        json.decode(hindiMovieResponse.body),
+      );
+      homePageData['Hindi Movies'] = movieRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
 
-      final teluguMovieResponse = await http.get(Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&browseLangFilterIds=te&type=1$_endParam"));
-      final teluguMovieRoot = _MovieRoot.fromJson(json.decode(teluguMovieResponse.body));
-      homePageData['Telugu Movies'] = teluguMovieRoot.items.map((e) => e.toMovie(_imageUrl)).toList();
+      final teluguMovieResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&browseLangFilterIds=te&type=1$_endParam",
+        ),
+      );
+      final teluguMovieRoot = _MovieRoot.fromJson(
+        json.decode(teluguMovieResponse.body),
+      );
+      homePageData['Telugu Movies'] = teluguMovieRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
     } catch (e, s) {
       if (kDebugMode) {
         print('[MPlayerProvider] Error in getHomePage: $e\n$s');
@@ -91,7 +122,9 @@ class MPlayerProvider implements StreamingProvider {
     try {
       loadUrl = _LoadUrl.fromJson(json.decode(movie.id));
       if (kDebugMode) {
-        print('[MPlayerProvider] Parsed LoadUrl successfully: ${loadUrl.title}');
+        print(
+          '[MPlayerProvider] Parsed LoadUrl successfully: ${loadUrl.title}',
+        );
       }
     } catch (e, s) {
       if (kDebugMode) {
@@ -112,9 +145,13 @@ class MPlayerProvider implements StreamingProvider {
         throw Exception('shareUrl is null for TV Show');
       }
       if (kDebugMode) {
-        print('[MPlayerProvider] Fetching seasons from: $_mainUrl${loadUrl.shareUrl}');
+        print(
+          '[MPlayerProvider] Fetching seasons from: $_mainUrl${loadUrl.shareUrl}',
+        );
       }
-      final response = await http.get(Uri.parse("$_mainUrl${loadUrl.shareUrl}"));
+      final response = await http.get(
+        Uri.parse("$_mainUrl${loadUrl.shareUrl}"),
+      );
       if (kDebugMode) {
         print('[MPlayerProvider] Got seasons page, parsing...');
       }
@@ -123,7 +160,9 @@ class MPlayerProvider implements StreamingProvider {
 
       for (var season in seasonData) {
         if (kDebugMode) {
-          print('[MPlayerProvider] Fetching episodes for season ${season.season}...');
+          print(
+            '[MPlayerProvider] Fetching episodes for season ${season.season}...',
+          );
         }
         var page = 1;
         String? nextQuery;
@@ -135,19 +174,26 @@ class MPlayerProvider implements StreamingProvider {
             print('[MPlayerProvider] Fetching episode page: $url');
           }
           final episodeResponse = await http.get(Uri.parse(url));
-          final episodeData = _EpisodesParser.fromJson(json.decode(episodeResponse.body));
+          final episodeData = _EpisodesParser.fromJson(
+            json.decode(episodeResponse.body),
+          );
 
-          episodes.addAll(episodeData.items.map((e) {
-            final thumbnailUrl = e.imageInfo.isNotEmpty
-                ? _imageUrl + e.imageInfo.first.url
-                : null;
-            return NetflixEpisode(
-                id: json.encode(e.stream.toJson()), // Encode the whole stream object
+          episodes.addAll(
+            episodeData.items.map((e) {
+              final thumbnailUrl = e.imageInfo.isNotEmpty
+                  ? _imageUrl + e.imageInfo.first.url
+                  : null;
+              return NetflixEpisode(
+                id: json.encode(
+                  e.stream.toJson(),
+                ), // Encode the whole stream object
                 title: e.title ?? "",
                 episode: e.sequence.toString(),
                 season: season.season.toString(),
-                thumbnail: thumbnailUrl);
-          }));
+                thumbnail: thumbnailUrl,
+              );
+            }),
+          );
           nextQuery = episodeData.next;
           page++;
         } while (nextQuery != null);
@@ -164,19 +210,26 @@ class MPlayerProvider implements StreamingProvider {
       }
 
       episodesBySeason.forEach((seasonNum, episodeList) {
-        seasons.add(NetflixSeason(season: seasonNum.toString(), episodes: episodeList));
+        seasons.add(
+          NetflixSeason(season: seasonNum.toString(), episodes: episodeList),
+        );
       });
 
-      seasons.sort((a, b) => int.parse(a.season).compareTo(int.parse(b.season)));
+      seasons.sort(
+        (a, b) => int.parse(a.season).compareTo(int.parse(b.season)),
+      );
 
       if (kDebugMode) {
-        print('[MPlayerProvider] Finished processing TV show, returning details.');
+        print(
+          '[MPlayerProvider] Finished processing TV show, returning details.',
+        );
       }
       return NetflixMovieDetails(
-          title: loadUrl.title,
-          plot: loadUrl.description,
-          seasons: seasons,
-          type: type);
+        title: loadUrl.title,
+        plot: loadUrl.description,
+        seasons: seasons,
+        type: type,
+      );
     } else {
       if (kDebugMode) {
         print('[MPlayerProvider] Processing movie, returning details.');
@@ -185,13 +238,19 @@ class MPlayerProvider implements StreamingProvider {
         title: loadUrl.title,
         plot: loadUrl.description,
         seasons: [
-          NetflixSeason(season: "1", episodes: [
-            NetflixEpisode(
-                id: json.encode(loadUrl.stream?.toJson() ?? {}), // Encode the whole stream object
+          NetflixSeason(
+            season: "1",
+            episodes: [
+              NetflixEpisode(
+                id: json.encode(
+                  loadUrl.stream?.toJson() ?? {},
+                ), // Encode the whole stream object
                 title: loadUrl.title,
                 episode: "1",
-                season: "1")
-          ])
+                season: "1",
+              ),
+            ],
+          ),
         ],
         type: type,
       );
@@ -201,18 +260,24 @@ class MPlayerProvider implements StreamingProvider {
   List<_SeasonData> _getSeasonData(String html) {
     final document = parser.parse(html);
     final seasons = document.querySelectorAll("div.hs__items-container > div");
-    return seasons.map((element) {
-      final tab = element.attributes['data-tab'];
-      final id = element.attributes['data-id'];
-      if (tab != null && id != null) {
-        return _SeasonData(season: int.parse(tab), seasonId: id);
-      }
-      return null;
-    }).whereType<_SeasonData>().toList();
+    return seasons
+        .map((element) {
+          final tab = element.attributes['data-tab'];
+          final id = element.attributes['data-id'];
+          if (tab != null && id != null) {
+            return _SeasonData(season: int.parse(tab), seasonId: id);
+          }
+          return null;
+        })
+        .whereType<_SeasonData>()
+        .toList();
   }
 
   @override
-  Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
+  Future<Map<String, dynamic>> loadLink(
+    Movie movie, {
+    NetflixEpisode? episode,
+  }) async {
     if (kDebugMode) {
       print('[MPlayerProvider] loadLink for: ${movie.title}');
     }
@@ -235,7 +300,7 @@ class MPlayerProvider implements StreamingProvider {
     streamsWithQuality.forEach((quality, url) {
       final fullUrl = url.startsWith("video") ? "$_endpointUrl$url" : url;
       videoStreams.add(VideoStream(url: fullUrl, quality: quality));
-       if (kDebugMode) {
+      if (kDebugMode) {
         print('[MPlayerProvider] Found stream: $quality -> $fullUrl');
       }
     });
@@ -294,34 +359,39 @@ class _Item {
   final String description;
   final String? shareUrl;
 
-  _Item(
-      {required this.title,
-      required this.type,
-      required this.id,
-      required this.imageInfo,
-      this.stream,
-      required this.description,
-      this.shareUrl});
+  _Item({
+    required this.title,
+    required this.type,
+    required this.id,
+    required this.imageInfo,
+    this.stream,
+    required this.description,
+    this.shareUrl,
+  });
 
   factory _Item.fromJson(Map<String, dynamic> json) {
     return _Item(
-        title: json['title'],
-        type: json['type'],
-        id: json['id'],
-        imageInfo: (json['imageInfo'] as List)
-            .map((e) => _ImageInfo.fromJson(e))
-            .toList(),
-        stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
-        description: json['description'],
-        shareUrl: json['shareUrl']);
+      title: json['title'],
+      type: json['type'],
+      id: json['id'],
+      imageInfo: (json['imageInfo'] as List)
+          .map((e) => _ImageInfo.fromJson(e))
+          .toList(),
+      stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
+      description: json['description'],
+      shareUrl: json['shareUrl'],
+    );
   }
 
   Movie toMovie(String imageUrl) {
     _ImageInfo? poster;
     if (imageInfo.isNotEmpty) {
-      poster = imageInfo.firstWhere((e) => e.type == 'portrait_large', orElse: () => imageInfo.first);
+      poster = imageInfo.firstWhere(
+        (e) => e.type == 'portrait_large',
+        orElse: () => imageInfo.first,
+      );
     }
-    
+
     String posterUrl = "";
     if (poster != null) {
       if (poster.url.startsWith("http")) {
@@ -336,19 +406,22 @@ class _Item {
     }
 
     return Movie(
-        id: json.encode(_LoadUrl(
-                title: title,
-                tvType: type,
-                stream: stream,
-                description: description,
-                shareUrl: shareUrl)
-            .toJson()),
-        title: title,
-        overview: description,
-        posterPath: posterUrl,
-        backdropPath: "",
-        voteAverage: 0,
-        provider: 'MPlayer');
+      id: json.encode(
+        _LoadUrl(
+          title: title,
+          tvType: type,
+          stream: stream,
+          description: description,
+          shareUrl: shareUrl,
+        ).toJson(),
+      ),
+      title: title,
+      overview: description,
+      posterPath: posterUrl,
+      backdropPath: "",
+      voteAverage: 0,
+      provider: 'MPlayer',
+    );
   }
 }
 
@@ -359,10 +432,7 @@ class _ImageInfo {
   _ImageInfo({required this.type, required this.url});
 
   factory _ImageInfo.fromJson(Map<String, dynamic> json) {
-    return _ImageInfo(
-      type: json['type'],
-      url: json['url'],
-    );
+    return _ImageInfo(type: json['type'], url: json['url']);
   }
 }
 
@@ -373,7 +443,9 @@ class _MovieRoot {
 
   factory _MovieRoot.fromJson(Map<String, dynamic> json) {
     return _MovieRoot(
-      items: (json['items'] as List).map((e) => _MovieItem.fromJson(e)).toList(),
+      items: (json['items'] as List)
+          .map((e) => _MovieItem.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -387,34 +459,39 @@ class _MovieItem {
   final String description;
   final String? shareUrl;
 
-  _MovieItem(
-      {required this.title,
-      required this.type,
-      required this.id,
-      required this.imageInfo,
-      this.stream,
-      required this.description,
-      this.shareUrl});
+  _MovieItem({
+    required this.title,
+    required this.type,
+    required this.id,
+    required this.imageInfo,
+    this.stream,
+    required this.description,
+    this.shareUrl,
+  });
 
   factory _MovieItem.fromJson(Map<String, dynamic> json) {
     return _MovieItem(
-        title: json['title'],
-        type: json['type'],
-        id: json['id'],
-        imageInfo: (json['imageInfo'] as List)
-            .map((e) => _ImageInfo.fromJson(e))
-            .toList(),
-        stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
-        description: json['description'],
-        shareUrl: json['shareUrl']);
+      title: json['title'],
+      type: json['type'],
+      id: json['id'],
+      imageInfo: (json['imageInfo'] as List)
+          .map((e) => _ImageInfo.fromJson(e))
+          .toList(),
+      stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
+      description: json['description'],
+      shareUrl: json['shareUrl'],
+    );
   }
 
   Movie toMovie(String imageUrl) {
-     _ImageInfo? poster;
+    _ImageInfo? poster;
     if (imageInfo.isNotEmpty) {
-      poster = imageInfo.firstWhere((e) => e.type == 'portrait_large', orElse: () => imageInfo.first);
+      poster = imageInfo.firstWhere(
+        (e) => e.type == 'portrait_large',
+        orElse: () => imageInfo.first,
+      );
     }
-    
+
     String posterUrl = "";
     if (poster != null) {
       if (poster.url.startsWith("http")) {
@@ -429,19 +506,22 @@ class _MovieItem {
     }
 
     return Movie(
-        id: json.encode(_LoadUrl(
-                title: title,
-                tvType: type,
-                stream: stream,
-                description: description,
-                shareUrl: shareUrl)
-            .toJson()),
-        title: title,
-        overview: description,
-        posterPath: posterUrl,
-        backdropPath: "",
-        voteAverage: 0,
-        provider: 'MPlayer');
+      id: json.encode(
+        _LoadUrl(
+          title: title,
+          tvType: type,
+          stream: stream,
+          description: description,
+          shareUrl: shareUrl,
+        ).toJson(),
+      ),
+      title: title,
+      overview: description,
+      posterPath: posterUrl,
+      backdropPath: "",
+      voteAverage: 0,
+      provider: 'MPlayer',
+    );
   }
 }
 
@@ -491,11 +571,11 @@ class _Stream {
   }
 
   Map<String, dynamic> toJson() => {
-        'hls': hls?.toJson(),
-        'dash': dash?.toJson(),
-        'mxplay': mxplay?.toJson(),
-        'thirdParty': thirdParty?.toJson(),
-      };
+    'hls': hls?.toJson(),
+    'dash': dash?.toJson(),
+    'mxplay': mxplay?.toJson(),
+    'thirdParty': thirdParty?.toJson(),
+  };
 
   Map<String, String> getAllStreamsWithQuality() {
     final streams = <String, String>{};
@@ -505,14 +585,22 @@ class _Stream {
     if (dash?.high != null) streams['DASH High'] = dash!.high!;
     if (dash?.base != null) streams['DASH Base'] = dash!.base!;
     if (dash?.main != null) streams['DASH Main'] = dash!.main!;
-    if (mxplay?.hls?.high != null) streams['MXPlay HLS High'] = mxplay!.hls!.high!;
-    if (mxplay?.hls?.base != null) streams['MXPlay HLS Base'] = mxplay!.hls!.base!;
-    if (mxplay?.hls?.main != null) streams['MXPlay HLS Main'] = mxplay!.hls!.main!;
-    if (mxplay?.dash?.high != null) streams['MXPlay DASH High'] = mxplay!.dash!.high!;
-    if (mxplay?.dash?.base != null) streams['MXPlay DASH Base'] = mxplay!.dash!.base!;
-    if (mxplay?.dash?.main != null) streams['MXPlay DASH Main'] = mxplay!.dash!.main!;
-    if (thirdParty?.hlsUrl != null) streams['Third Party HLS'] = thirdParty!.hlsUrl!;
-    if (thirdParty?.dashUrl != null) streams['Third Party DASH'] = thirdParty!.dashUrl!;
+    if (mxplay?.hls?.high != null)
+      streams['MXPlay HLS High'] = mxplay!.hls!.high!;
+    if (mxplay?.hls?.base != null)
+      streams['MXPlay HLS Base'] = mxplay!.hls!.base!;
+    if (mxplay?.hls?.main != null)
+      streams['MXPlay HLS Main'] = mxplay!.hls!.main!;
+    if (mxplay?.dash?.high != null)
+      streams['MXPlay DASH High'] = mxplay!.dash!.high!;
+    if (mxplay?.dash?.base != null)
+      streams['MXPlay DASH Base'] = mxplay!.dash!.base!;
+    if (mxplay?.dash?.main != null)
+      streams['MXPlay DASH Main'] = mxplay!.dash!.main!;
+    if (thirdParty?.hlsUrl != null)
+      streams['Third Party HLS'] = thirdParty!.hlsUrl!;
+    if (thirdParty?.dashUrl != null)
+      streams['Third Party DASH'] = thirdParty!.dashUrl!;
     return streams;
   }
 }
@@ -525,18 +613,10 @@ class _Hls {
   _Hls({this.high, this.base, this.main});
 
   factory _Hls.fromJson(Map<String, dynamic> json) {
-    return _Hls(
-      high: json['high'],
-      base: json['base'],
-      main: json['main'],
-    );
+    return _Hls(high: json['high'], base: json['base'], main: json['main']);
   }
 
-  Map<String, dynamic> toJson() => {
-        'high': high,
-        'base': base,
-        'main': main,
-      };
+  Map<String, dynamic> toJson() => {'high': high, 'base': base, 'main': main};
 }
 
 class _Dash {
@@ -547,18 +627,10 @@ class _Dash {
   _Dash({this.high, this.base, this.main});
 
   factory _Dash.fromJson(Map<String, dynamic> json) {
-    return _Dash(
-      high: json['high'],
-      base: json['base'],
-      main: json['main'],
-    );
+    return _Dash(high: json['high'], base: json['base'], main: json['main']);
   }
 
-  Map<String, dynamic> toJson() => {
-        'high': high,
-        'base': base,
-        'main': main,
-      };
+  Map<String, dynamic> toJson() => {'high': high, 'base': base, 'main': main};
 }
 
 class _Mxplay {
@@ -575,9 +647,9 @@ class _Mxplay {
   }
 
   Map<String, dynamic> toJson() => {
-        'hls': hls?.toJson(),
-        'dash': dash?.toJson(),
-      };
+    'hls': hls?.toJson(),
+    'dash': dash?.toJson(),
+  };
 }
 
 class _ThirdParty {
@@ -587,16 +659,10 @@ class _ThirdParty {
   _ThirdParty({this.hlsUrl, this.dashUrl});
 
   factory _ThirdParty.fromJson(Map<String, dynamic> json) {
-    return _ThirdParty(
-      hlsUrl: json['hlsUrl'],
-      dashUrl: json['dashUrl'],
-    );
+    return _ThirdParty(hlsUrl: json['hlsUrl'], dashUrl: json['dashUrl']);
   }
 
-  Map<String, dynamic> toJson() => {
-        'hlsUrl': hlsUrl,
-        'dashUrl': dashUrl,
-      };
+  Map<String, dynamic> toJson() => {'hlsUrl': hlsUrl, 'dashUrl': dashUrl};
 }
 
 class _LoadUrl {
@@ -606,12 +672,13 @@ class _LoadUrl {
   final String description;
   final String? shareUrl;
 
-  _LoadUrl(
-      {required this.title,
-      required this.tvType,
-      this.stream,
-      required this.description,
-      this.shareUrl});
+  _LoadUrl({
+    required this.title,
+    required this.tvType,
+    this.stream,
+    required this.description,
+    this.shareUrl,
+  });
 
   factory _LoadUrl.fromJson(Map<String, dynamic> json) {
     return _LoadUrl(
@@ -624,12 +691,12 @@ class _LoadUrl {
   }
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'tvType': tvType,
-        'stream': stream?.toJson(),
-        'description': description,
-        'shareUrl': shareUrl,
-      };
+    'title': title,
+    'tvType': tvType,
+    'stream': stream?.toJson(),
+    'description': description,
+    'shareUrl': shareUrl,
+  };
 }
 
 class _EpisodesParser {
@@ -654,8 +721,12 @@ class _EpisodesItem {
   final int sequence;
   final List<_ImageInfo> imageInfo;
 
-
-  _EpisodesItem({this.title, required this.stream, required this.sequence, required this.imageInfo});
+  _EpisodesItem({
+    this.title,
+    required this.stream,
+    required this.sequence,
+    required this.imageInfo,
+  });
 
   factory _EpisodesItem.fromJson(Map<String, dynamic> json) {
     return _EpisodesItem(

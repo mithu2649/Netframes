@@ -58,11 +58,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       useAsmsSubtitles: true,
       useAsmsTracks: true,
       subtitles: widget.subtitles
-          ?.map((s) => BetterPlayerSubtitlesSource(
-                type: BetterPlayerSubtitlesSourceType.network,
-                name: s.language, // Assuming 's' has a 'language' property
-                urls: [s.url],
-              ))
+          ?.map(
+            (s) => BetterPlayerSubtitlesSource(
+              type: BetterPlayerSubtitlesSourceType.network,
+              name: s.language, // Assuming 's' has a 'language' property
+              urls: [s.url],
+            ),
+          )
           .toList(),
     );
 
@@ -219,14 +221,30 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         videoStreams: widget.videoStreams,
                         videoTitle: widget.videoTitle,
                         onSourceChanged: (url) {
-                          _controller.setupDataSource(
-                            BetterPlayerDataSource(
-                              BetterPlayerDataSourceType.network,
-                              url,
-                              headers: widget.headers,
-                            ),
-                          );
-                        },
+  _controller.setupDataSource(
+    BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      url,
+      headers: widget.headers,
+      useAsmsSubtitles: true,
+      useAsmsTracks: true,
+      subtitles: widget.subtitles
+          ?.map(
+            (s) => BetterPlayerSubtitlesSource(
+              type: BetterPlayerSubtitlesSourceType.network,
+              name: s is BetterPlayerSubtitlesSource
+                  ? s.name
+                  : (s.label ?? "Subtitle"), // if provider gave raw map
+              urls: [
+                s is BetterPlayerSubtitlesSource ? s.urls?.first : s.url,
+              ],
+              headers: widget.headers,
+            ),
+          )
+          .toList(),
+    ),
+  );
+},
                         onLock: _toggleLock,
                         isLocked: _isLocked,
                         onResize: _toggleFit,
@@ -244,8 +262,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               if (_feedbackText != null)
                 Center(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withAlpha(150),
                       borderRadius: BorderRadius.circular(8),
@@ -256,9 +276,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         if (_seekIcon != null)
                           Icon(_seekIcon, color: Colors.white, size: 20),
                         if (_seekIcon != null) const SizedBox(width: 8),
-                        Text(_feedbackText!,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 16)),
+                        Text(
+                          _feedbackText!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
                     ),
                   ),

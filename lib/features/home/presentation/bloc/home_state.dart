@@ -10,7 +10,9 @@ abstract class HomeState extends Equatable {
   List<Object> get props => [selectedProvider];
 }
 
-class HomeLoading extends HomeState {}
+class HomeLoading extends HomeState {
+  const HomeLoading({required super.selectedProvider});
+}
 
 class HomeLoaded extends HomeState {
   final Map<String, List<Movie>> movies;

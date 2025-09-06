@@ -98,7 +98,8 @@ class NetflixMirrorProvider implements StreamingProvider {
   Map<String, String> get _apiHeaders {
     return {
       ..._headers,
-      'Cookie': 't_hash_t=$_cookie; user_token=1fe232a3c19230c5d7282d426351d1a3; ott=nf; hd=on',
+      'Cookie':
+          't_hash_t=$_cookie; user_token=1fe232a3c19230c5d7282d426351d1a3; ott=nf; hd=on',
       'Referer': '$_baseUrl/',
     };
   }
@@ -111,91 +112,57 @@ class NetflixMirrorProvider implements StreamingProvider {
       headers: _apiHeaders,
     );
 
-    // if (response.statusCode == 200) {
-    //   final document = parser.parse(response.body);
-    //   final Map<String, List<Movie>> homePageData = {};
-
-    //   final rows = document.querySelectorAll('.lolomoRow');
-    //   for (var row in rows) {
-    //     final title =
-    //         row.querySelector('h2 > span > div')?.text.trim() ?? 'Curated By Netflix';
-    //     final movies = <Movie>[];
-    //     final movieElements = row.querySelectorAll('img.lazy');
-    //     for (var movieElement in movieElements) {
-    //       final id = movieElement.attributes['data-src']
-    //           ?.split('/')
-    //           .last
-    //           .split('.')
-    //           .first;
-    //       if (id != null) {
-    //         movies.add(
-    //           Movie(
-    //             id: id,
-    //             title: '',
-    //             overview: '',
-    //             posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
-    //             backdropPath: 'https://imgcdn.media/poster/h/$id.jpg',
-    //             voteAverage: 0.0,
-    //             provider: 'Netflix',
-    //           ),
-    //         );
-    //       }
-    //     }
-    //     homePageData[title] = movies;
-    //   }
-    //   return homePageData;
-    // } 
     if (response.statusCode == 200) {
-  final document = parser.parse(response.body);
-  final Map<String, List<Movie>> homePageData = {};
+      final document = parser.parse(response.body);
+      final Map<String, List<Movie>> homePageData = {};
 
-  final rows = document.querySelectorAll('.lolomoRow');
-  for (var row in rows) {
-    // More flexible title lookup with fallbacks
-    final titleElement = row.querySelector('h2 > span > div') ??
-        row.querySelector('h2 > span') ??
-        row.querySelector('h2') ??
-        row.querySelector('.rowHeader');
+      final rows = document.querySelectorAll('.lolomoRow');
+      for (var row in rows) {
+        // More flexible title lookup with fallbacks
+        final titleElement =
+            row.querySelector('h2 > span > div') ??
+            row.querySelector('h2 > span') ??
+            row.querySelector('h2') ??
+            row.querySelector('.rowHeader');
 
-    final title = titleElement?.text.trim().isNotEmpty == true
-        ? titleElement!.text.trim()
-        : 'Curated By Netflix';
+        final title = titleElement?.text.trim().isNotEmpty == true
+            ? titleElement!.text.trim()
+            : 'Curated By Netflix';
 
-    final movies = <Movie>[];
+        final movies = <Movie>[];
 
-    // Match all possible image sources (lazy / src / data-lazy)
-    final movieElements = row.querySelectorAll('img');
-    for (var movieElement in movieElements) {
-      final src = movieElement.attributes['data-src'] ??
-          movieElement.attributes['data-lazy'] ??
-          movieElement.attributes['src'];
+        // Match all possible image sources (lazy / src / data-lazy)
+        final movieElements = row.querySelectorAll('img');
+        for (var movieElement in movieElements) {
+          final src =
+              movieElement.attributes['data-src'] ??
+              movieElement.attributes['data-lazy'] ??
+              movieElement.attributes['src'];
 
-      if (src == null || src.isEmpty) continue;
+          if (src == null || src.isEmpty) continue;
 
-      final id = src.split('/').last.split('.').first;
-      if (id.isEmpty) continue;
+          final id = src.split('/').last.split('.').first;
+          if (id.isEmpty) continue;
 
-      movies.add(
-        Movie(
-          id: id,
-          title: '',
-          overview: '',
-          posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
-          backdropPath: 'https://imgcdn.media/poster/h/$id.jpg',
-          voteAverage: 0.0,
-          provider: 'Netflix',
-        ),
-      );
-    }
+          movies.add(
+            Movie(
+              id: id,
+              title: '',
+              overview: '',
+              posterPath: 'https://imgcdn.media/poster/v/$id.jpg',
+              backdropPath: 'https://imgcdn.media/poster/h/$id.jpg',
+              voteAverage: 0.0,
+              provider: 'Netflix',
+            ),
+          );
+        }
 
-    if (movies.isNotEmpty) {
-      homePageData[title] = movies;
-    }
-  }
-  return homePageData;
-}
-
-    else {
+        if (movies.isNotEmpty) {
+          homePageData[title] = movies;
+        }
+      }
+      return homePageData;
+    } else {
       throw Exception('Failed to load home page');
     }
   }
@@ -376,7 +343,7 @@ class NetflixMirrorProvider implements StreamingProvider {
       final videoHeaders = {
         'Cookie': _apiHeaders['Cookie']!,
         'Referer': episode != null
-            ? '$playerBaseUrl/play.php?id=${movie.id}&s=${episode.season}&e=${episode.episode}&in=$h'
+            ? playerBaseUrl
             : '$playerBaseUrl/play.php?id=${movie.id}&in=$h',
       };
 
@@ -390,55 +357,92 @@ class NetflixMirrorProvider implements StreamingProvider {
           if (kDebugMode) {
             print('Stream URL: $streamUrl');
           }
-          videoStreams.add(
-            VideoStream(
-              url: streamUrl,
-              quality: source.label ?? 'Unknown',
-              headers: videoHeaders,
-              cookies: {},
-            ),
-          );
 
-          // Attempt to fetch the M3U8 content directly for debugging
           try {
             final m3u8Response = await http.get(
               Uri.parse(streamUrl),
               headers: videoHeaders,
             );
-            if (kDebugMode) {
-              print('M3U8 URL: $streamUrl');
-              print('M3U8 Response Status: ${m3u8Response.statusCode}');
-              print('M3U8 Response Body Length: ${m3u8Response.body.length}');
-              print('M3U8 Response Body: ${m3u8Response.body.trim()}');
+            final body = m3u8Response.body.trim();
+
+            final isValid =
+                body.contains('#EXTINF') || body.contains('#EXT-X-STREAM-INF');
+
+            if (!isValid) {
+              if (kDebugMode) {
+                print('Skipping invalid stream: ${source.label} -> $streamUrl');
+              }
+              continue; // don’t add this quality
             }
+
+            videoStreams.add(
+              VideoStream(
+                url: streamUrl,
+                quality: source.label ?? 'Unknown',
+                headers: videoHeaders,
+                cookies: {},
+              ),
+            );
           } catch (e) {
-            if (kDebugMode) {
-              print('Error fetching M3U8 content: $e');
+            print('Error checking m3u8 for ${source.label}: $e');
+          }
+
+         // ✅ parse subtitles from `tracks`
+          if (item.tracks != null) {
+            for (var track in item.tracks!) {
+              if (track.kind == "captions" && track.file.isNotEmpty) {
+                final subtitleUrl = _fixUrl(track.file);
+                subtitles.add(
+                  BetterPlayerSubtitlesSource(
+                    type: BetterPlayerSubtitlesSourceType.network,
+                    urls: [subtitleUrl],
+                    name: track.label ?? "Subtitle",
+                    headers: videoHeaders,
+                  ),
+                );
+              }
             }
           }
+
+          // // Attempt to fetch the M3U8 content directly for debugging
+          // try {
+          //   final m3u8Response = await http.get(
+          //     Uri.parse(streamUrl),
+          //     headers: videoHeaders,
+          //   );
+          //   if (kDebugMode) {
+          //     print('-----> M3U8 URL: $streamUrl');
+          //     print('M3U8 Response Status: ${m3u8Response.statusCode}');
+          //     print('M3U8 Response Body Length: ${m3u8Response.body.length}');
+          //     print('M3U8 Response Body: ${m3u8Response.body.trim()}');
+          //   }
+          // } catch (e) {
+          //   if (kDebugMode) {
+          //     print('Error fetching M3U8 content: $e');
+          //   }
+          // }
         }
       }
 
-      final subtitleUrl =
-          'http://subs.nfmirrorcdn.top/files/${movie.id}/${movie.id}-en.[CC].srt';
-      try {
-        final subtitleResponse = await http.head(Uri.parse(subtitleUrl));
-        if (subtitleResponse.statusCode == 200) {
-          subtitles.add(
-            BetterPlayerSubtitlesSource(
-              type: BetterPlayerSubtitlesSourceType.network,
-              urls: [subtitleUrl],
-              name: "English",
-              headers: videoHeaders,
-            ),
-          );
-
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('No subtitles found: $e');
-        }
-      }
+      // final subtitleUrl =
+      //     'http://subs.nfmirrorcdn.top/files/${movie.id}/${movie.id}-en.[CC].srt';
+      // try {
+      //   final subtitleResponse = await http.head(Uri.parse(subtitleUrl));
+      //   if (subtitleResponse.statusCode == 200) {
+      //     subtitles.add(
+      //       BetterPlayerSubtitlesSource(
+      //         type: BetterPlayerSubtitlesSourceType.network,
+      //         urls: [subtitleUrl],
+      //         name: "English",
+      //         headers: videoHeaders,
+      //       ),
+      //     );
+      //   }
+      // } catch (e) {
+      //   if (kDebugMode) {
+      //     print('No subtitles found: $e');
+      //   }
+      // }
       return {'streams': videoStreams, 'subtitles': subtitles};
     } else {
       throw Exception(
@@ -548,16 +552,38 @@ class _PlayListItem {
   }
 }
 
+// class _Track {
+//   final String file;
+//   final String? kind;
+
+//   _Track({required this.file, this.kind});
+
+//   factory _Track.fromJson(Map<String, dynamic> json) {
+//     return _Track(file: json['file'], kind: json['kind'] as String?);
+//   }
+// }
+
 class _Track {
+  final String kind;
   final String file;
-  final String? kind;
+  final String? label;     // 👈 add this
+  final String? language;
 
-  _Track({required this.file, this.kind});
+  _Track({
+    required this.kind,
+    required this.file,
+    this.label,
+    this.language,
+  });
 
-  factory _Track.fromJson(Map<String, dynamic> json) {
-    return _Track(file: json['file'], kind: json['kind'] as String?);
-  }
+  factory _Track.fromJson(Map<String, dynamic> json) => _Track(
+        kind: json['kind'] as String,
+        file: json['file'] as String,
+        label: json['label'] as String?,
+        language: json['language'] as String?,
+      );
 }
+
 
 class _Source {
   final String file;
