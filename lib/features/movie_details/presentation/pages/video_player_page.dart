@@ -221,30 +221,34 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         videoStreams: widget.videoStreams,
                         videoTitle: widget.videoTitle,
                         onSourceChanged: (url) {
-  _controller.setupDataSource(
-    BetterPlayerDataSource(
-      BetterPlayerDataSourceType.network,
-      url,
-      headers: widget.headers,
-      useAsmsSubtitles: true,
-      useAsmsTracks: true,
-      subtitles: widget.subtitles
-          ?.map(
-            (s) => BetterPlayerSubtitlesSource(
-              type: BetterPlayerSubtitlesSourceType.network,
-              name: s is BetterPlayerSubtitlesSource
-                  ? s.name
-                  : (s.label ?? "Subtitle"), // if provider gave raw map
-              urls: [
-                s is BetterPlayerSubtitlesSource ? s.urls?.first : s.url,
-              ],
-              headers: widget.headers,
-            ),
-          )
-          .toList(),
-    ),
-  );
-},
+                          _controller.setupDataSource(
+                            BetterPlayerDataSource(
+                              BetterPlayerDataSourceType.network,
+                              url,
+                              headers: widget.headers,
+                              useAsmsSubtitles: true,
+                              useAsmsTracks: true,
+                              subtitles: widget.subtitles
+                                  ?.map(
+                                    (s) => BetterPlayerSubtitlesSource(
+                                      type: BetterPlayerSubtitlesSourceType
+                                          .network,
+                                      name: s is BetterPlayerSubtitlesSource
+                                          ? s.name
+                                          : (s.label ??
+                                                "Subtitle"), // if provider gave raw map
+                                      urls: [
+                                        s is BetterPlayerSubtitlesSource
+                                            ? s.urls?.first
+                                            : s.url,
+                                      ],
+                                      headers: widget.headers,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          );
+                        },
                         onLock: _toggleLock,
                         isLocked: _isLocked,
                         onResize: _toggleFit,

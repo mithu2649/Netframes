@@ -345,7 +345,10 @@ class _MXPlayer {
 
   factory _MXPlayer.fromJson(Map<String, dynamic> json) {
     return _MXPlayer(
-      items: (json['items'] as List).map((e) => _Item.fromJson(e)).toList(),
+      items: (json['items'] as List?) 
+              ?.map((e) => _Item.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -374,9 +377,10 @@ class _Item {
       title: json['title'],
       type: json['type'],
       id: json['id'],
-      imageInfo: (json['imageInfo'] as List)
-          .map((e) => _ImageInfo.fromJson(e))
-          .toList(),
+      imageInfo: (json['imageInfo'] as List?)
+              ?.map((e) => _ImageInfo.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
       description: json['description'],
       shareUrl: json['shareUrl'],
@@ -443,9 +447,10 @@ class _MovieRoot {
 
   factory _MovieRoot.fromJson(Map<String, dynamic> json) {
     return _MovieRoot(
-      items: (json['items'] as List)
-          .map((e) => _MovieItem.fromJson(e))
-          .toList(),
+      items: (json['items'] as List?)
+              ?.map((e) => _MovieItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -474,9 +479,10 @@ class _MovieItem {
       title: json['title'],
       type: json['type'],
       id: json['id'],
-      imageInfo: (json['imageInfo'] as List)
-          .map((e) => _ImageInfo.fromJson(e))
-          .toList(),
+      imageInfo: (json['imageInfo'] as List?)
+              ?.map((e) => _ImageInfo.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
       description: json['description'],
       shareUrl: json['shareUrl'],
@@ -532,9 +538,10 @@ class _SearchResult {
 
   factory _SearchResult.fromJson(Map<String, dynamic> json) {
     return _SearchResult(
-      sections: (json['sections'] as List)
-          .map((e) => _Section.fromJson(e))
-          .toList(),
+      sections: (json['sections'] as List?)
+              ?.map((e) => _Section.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -546,7 +553,10 @@ class _Section {
 
   factory _Section.fromJson(Map<String, dynamic> json) {
     return _Section(
-      items: (json['items'] as List).map((e) => _Item.fromJson(e)).toList(),
+      items: (json['items'] as List?)
+              ?.map((e) => _Item.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -707,9 +717,10 @@ class _EpisodesParser {
 
   factory _EpisodesParser.fromJson(Map<String, dynamic> json) {
     return _EpisodesParser(
-      items: (json['items'] as List)
-          .map((e) => _EpisodesItem.fromJson(e))
-          .toList(),
+      items: (json['items'] as List?)
+              ?.map((e) => _EpisodesItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       next: json['next'],
     );
   }
@@ -731,11 +742,12 @@ class _EpisodesItem {
   factory _EpisodesItem.fromJson(Map<String, dynamic> json) {
     return _EpisodesItem(
       title: json['title'],
-      stream: _Stream.fromJson(json['stream']),
+      stream: _Stream.fromJson(json['stream'] ?? {}),
       sequence: json['sequence'],
-      imageInfo: (json['imageInfo'] as List)
-          .map((e) => _ImageInfo.fromJson(e))
-          .toList(),
+      imageInfo: (json['imageInfo'] as List?)
+              ?.map((e) => _ImageInfo.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }

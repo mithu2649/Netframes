@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:html/parser.dart' as parser;
 
 class NetflixMirrorProvider implements StreamingProvider {
+  @override
   String get name => 'Netflix';
   final String _baseUrl = "https://net2025.cc";
   String _cookie = "";
