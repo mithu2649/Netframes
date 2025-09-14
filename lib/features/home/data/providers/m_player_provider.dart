@@ -46,6 +46,29 @@ class MPlayerProvider implements StreamingProvider {
     final Map<String, List<Movie>> homePageData = {};
 
     try {
+
+      // Add Top VDesi Shows section
+      final topVdesiShowsResponse = await http.get(
+        Uri.parse(
+          "$_webApi/list/4f900c3c4f2a37586ddbd59c64f8e48d?sectionName=Top+VDesi+Shows&sectionStyle=grid_vertical&pageDirection=1&finalId=ce2324bda0a2156667cf9165d3d2efa1$_endParam",
+        ),
+      );
+      final topVdesiShowsRoot = _MovieRoot.fromJson(
+        json.decode(topVdesiShowsResponse.body),
+      );
+      homePageData['Top VDesi Shows'] = topVdesiShowsRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
+
+      final hollywoodResponse = await http.get(
+        Uri.parse(
+          "$_webApi/detail/browseItem?&pageSize=20&isCustomized=true&pageNum=1&genreFilterIds=5c23dbea7606be32a13ff7a9f0b88bf6&type=1$_endParam",
+        ),
+      );
+      final hollywoodRoot = _MXPlayer.fromJson(json.decode(hollywoodResponse.body));
+      homePageData['Hollywood Dubbed Movies'] = hollywoodRoot.items
+          .map((e) => e.toMovie(_imageUrl))
+          .toList();
       final dramaResponse = await http.get(
         Uri.parse(
           "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&genreFilterIds=48efa872f6f17facebf6149dfc536ee1&type=2$_endParam",
@@ -65,6 +88,19 @@ class MPlayerProvider implements StreamingProvider {
       homePageData['Crime Shows'] = crimeRoot.items
           .map((e) => e.toMovie(_imageUrl))
           .toList();
+          // Add Anime section
+          final animeResponse = await http.get(
+            Uri.parse(
+              "$_webApi/list/0882fc4dd524a1528fec91055530cdee?sectionName=Anime+Now+in+Hindi%21&sectionStyle=grid_vertical$_endParam",
+            ),
+          );
+          final animeRoot = _MovieRoot.fromJson(
+            json.decode(animeResponse.body),
+          );
+          homePageData['Anime Now in Hindi!'] = animeRoot.items
+              .map((e) => e.toMovie(_imageUrl))
+              .toList();
+
 
       final thrillerResponse = await http.get(
         Uri.parse(
@@ -90,17 +126,20 @@ class MPlayerProvider implements StreamingProvider {
           .map((e) => e.toMovie(_imageUrl))
           .toList();
 
-      final teluguMovieResponse = await http.get(
+      // Add Chinese Shows section
+      final chineseShowsResponse = await http.get(
         Uri.parse(
-          "$_webApi/detail/browseItem?&pageNum=1&pageSize=20&isCustomized=true&browseLangFilterIds=te&type=1$_endParam",
+          "$_webApi/list/18db3f0315b88dbb82a07d782c8ffca7?sectionName=From+Chandni+Chowk+to...&sectionStyle=grid_vertical&pageDirection=1&finalId=3d7c6241da9fe57281334e764f72ed37$_endParam",
         ),
       );
-      final teluguMovieRoot = _MovieRoot.fromJson(
-        json.decode(teluguMovieResponse.body),
+      final chineseShowsRoot = _MovieRoot.fromJson(
+        json.decode(chineseShowsResponse.body),
       );
-      homePageData['Telugu Movies'] = teluguMovieRoot.items
+      homePageData['From Chandni Chowk to...'] = chineseShowsRoot.items
           .map((e) => e.toMovie(_imageUrl))
           .toList();
+
+      
     } catch (e, s) {
       if (kDebugMode) {
         print('[MPlayerProvider] Error in getHomePage: $e\n$s');
@@ -405,9 +444,19 @@ class _Item {
       }
     }
 
-    if (kDebugMode) {
-      print('[MPlayerProvider] Final Poster URL for $title: $posterUrl');
+    String? backdrop;
+    if (imageInfo.isNotEmpty) {
+      final backdropImage = imageInfo.firstWhere(
+        (e) => e.type == 'bigpic' || e.type == 'landscape',
+        orElse: () => imageInfo.first,
+      );
+      if (backdropImage.url.isNotEmpty) {
+        backdrop = backdropImage.url.startsWith("http")
+            ? backdropImage.url
+            : imageUrl + backdropImage.url;
+      }
     }
+
 
     return Movie(
       id: json.encode(
@@ -422,7 +471,7 @@ class _Item {
       title: title,
       overview: description,
       posterPath: posterUrl,
-      backdropPath: "",
+      backdropPath: backdrop ?? "",
       voteAverage: 0,
       provider: 'MPlayer',
     );
@@ -505,10 +554,6 @@ class _MovieItem {
       } else {
         posterUrl = imageUrl + poster.url;
       }
-    }
-
-    if (kDebugMode) {
-      print('[MPlayerProvider] Final Poster URL for $title: $posterUrl');
     }
 
     return Movie(
@@ -675,12 +720,14 @@ class _ThirdParty {
   Map<String, dynamic> toJson() => {'hlsUrl': hlsUrl, 'dashUrl': dashUrl};
 }
 
+
 class _LoadUrl {
   final String title;
   final String tvType;
   final _Stream? stream;
   final String description;
   final String? shareUrl;
+  final String? backdropPath;
 
   _LoadUrl({
     required this.title,
@@ -688,26 +735,51 @@ class _LoadUrl {
     this.stream,
     required this.description,
     this.shareUrl,
+    this.backdropPath,
   });
 
   factory _LoadUrl.fromJson(Map<String, dynamic> json) {
+    String? backdrop;
+    if (json['imageInfo'] != null && json['imageInfo'] is List) {
+      final images = (json['imageInfo'] as List)
+          .map((e) => _ImageInfo.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      // Prefer bigpic, then landscape, fallback to first available
+      final backdropImage = images.firstWhere(
+        (e) => e.type == 'bigpic' || e.type == 'landscape',
+        orElse: () => images.isNotEmpty
+            ? images.first
+            : _ImageInfo(type: '', url: ''),
+      );
+
+      if (backdropImage.url.isNotEmpty) {
+        backdrop = backdropImage.url.startsWith("http")
+            ? backdropImage.url
+            : "https://qqcdnpictest.mxplay.com/${backdropImage.url}";
+      }
+    }
+
     return _LoadUrl(
       title: json['title'],
       tvType: json['tvType'],
       stream: json['stream'] != null ? _Stream.fromJson(json['stream']) : null,
       description: json['description'],
       shareUrl: json['shareUrl'],
+      backdropPath: backdrop,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'title': title,
-    'tvType': tvType,
-    'stream': stream?.toJson(),
-    'description': description,
-    'shareUrl': shareUrl,
-  };
+        'title': title,
+        'tvType': tvType,
+        'stream': stream?.toJson(),
+        'description': description,
+        'shareUrl': shareUrl,
+        'backdropPath': backdropPath,
+      };
 }
+
 
 class _EpisodesParser {
   final List<_EpisodesItem> items;

@@ -12,6 +12,9 @@ class CustomVideoControls extends StatefulWidget {
   final VoidCallback onResize;
   final Future<bool> Function()? onBack;
   final ValueChanged<bool> onOptionsVisibilityChanged;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
+  final bool show;
 
   const CustomVideoControls({
     Key? key,
@@ -24,6 +27,9 @@ class CustomVideoControls extends StatefulWidget {
     required this.onResize,
     this.onBack,
     required this.onOptionsVisibilityChanged,
+    this.onScrubStart,
+    this.onScrubEnd,
+    required this.show,
   }) : super(key: key);
 
   @override
@@ -31,32 +37,85 @@ class CustomVideoControls extends StatefulWidget {
 }
 
 class _CustomVideoControlsState extends State<CustomVideoControls>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late VideoPlayerValue _latestValue;
   bool _dragging = false;
   String? _visibleOptions;
-  late AnimationController _animationController;
-  late Animation<Offset> _animation;
+
+  late AnimationController _optionsAnimationController;
+  late Animation<Offset> _optionsAnimation;
+
+  late AnimationController _visibilityController;
+  late Animation<Offset> _topBarAnimation;
+  late Animation<Offset> _bottomBarAnimation;
+  late Animation<double> _centerPlayButtonAnimation;
 
   @override
   void initState() {
     super.initState();
     widget.controller.videoPlayerController!.addListener(_updateState);
     _latestValue = widget.controller.videoPlayerController!.value;
-    _animationController = AnimationController(
+
+    _optionsAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _animation = Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+    _optionsAnimation = Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
         .animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+          CurvedAnimation(parent: _optionsAnimationController, curve: Curves.easeIn),
         );
+
+    _visibilityController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _topBarAnimation = Tween<Offset>(
+      begin: const Offset(0.0, -1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _visibilityController,
+      curve: Curves.easeOut,
+    ));
+
+    _bottomBarAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _visibilityController,
+      curve: Curves.easeOut,
+    ));
+
+    _centerPlayButtonAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _visibilityController,
+      curve: Curves.easeOut,
+    ));
+
+    if (widget.show) {
+      _visibilityController.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(CustomVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.show != oldWidget.show) {
+      if (widget.show) {
+        _visibilityController.forward();
+      } else {
+        _visibilityController.reverse();
+      }
+    }
   }
 
   @override
   void dispose() {
     widget.controller.videoPlayerController!.removeListener(_updateState);
-    _animationController.dispose();
+    _optionsAnimationController.dispose();
+    _visibilityController.dispose();
     super.dispose();
   }
 
@@ -79,9 +138,9 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       setState(() {
         _visibleOptions = options;
       });
-      _animationController.forward();
+      _optionsAnimationController.forward();
     } else {
-      _animationController.reverse().then((_) {
+      _optionsAnimationController.reverse().then((_) {
         if (mounted) {
           setState(() {
             _visibleOptions = null;
@@ -111,214 +170,225 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Top bar
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: Row(
-                      children: [
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () async {
-                              if (widget.onBack != null) {
-                                final canPop = await widget.onBack!();
-                                if (canPop && context.mounted) {
-                                  Navigator.of(context).pop();
+                  SlideTransition(
+                    position: _topBarAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Row(
+                        children: [
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                if (widget.onBack != null) {
+                                  final canPop = await widget.onBack!();
+                                  if (canPop && context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
                                 }
-                              }
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            widget.videoTitle ?? '',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
+                          Expanded(
+                            child: Text(
+                              widget.videoTitle ?? '',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            widget.isLocked ? Icons.lock : Icons.lock_open,
-                            color: Colors.white,
+                          IconButton(
+                            icon: Icon(
+                              widget.isLocked ? Icons.lock : Icons.lock_open,
+                              color: Colors.white,
+                            ),
+                            onPressed: widget.onLock,
                           ),
-                          onPressed: widget.onLock,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   // Middle play/pause
                   if (_visibleOptions == null)
-                    Center(
-                      child: IconButton(
-                        icon: Icon(
-                          (_latestValue.isPlaying)
-                              ? Icons.pause
-                              : Icons.play_arrow,
-                          size: 50,
-                          color: Colors.white,
+                    FadeTransition(
+                      opacity: _centerPlayButtonAnimation,
+                      child: Center(
+                        child: IconButton(
+                          icon: Icon(
+                            (_latestValue.isPlaying)
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                          onPressed: () async {
+                            if (_latestValue.isPlaying) {
+                              await widget.controller.pause();
+                            } else {
+                              await widget.controller.play();
+                            }
+                          },
                         ),
-                        onPressed: () async {
-                          if (_latestValue.isPlaying) {
-                            await widget.controller.pause();
-                          } else {
-                            await widget.controller.play();
-                          }
-                        },
                       ),
                     ),
                   // Bottom
-                  Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              _formatDuration(_latestValue.position),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            Expanded(
-                              child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 6.0,
+                  SlideTransition(
+                    position: _bottomBarAnimation,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                _formatDuration(_latestValue.position),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              Expanded(
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    thumbShape: const RoundSliderThumbShape(
+                                      enabledThumbRadius: 6.0,
+                                    ),
+                                    overlayShape: const RoundSliderOverlayShape(
+                                      overlayRadius: 15.0,
+                                    ),
+                                    trackHeight: 2.0,
                                   ),
-                                  overlayShape: const RoundSliderOverlayShape(
-                                    overlayRadius: 15.0,
-                                  ),
-                                  trackHeight: 2.0,
-                                ),
-                                child: Slider(
-                                  value: _latestValue.position.inMilliseconds
-                                      .toDouble(),
-                                  min: 0.0,
-                                  max:
-                                      (_latestValue.duration?.inMilliseconds ??
-                                              0)
-                                          .toDouble(),
-                                  activeColor: Colors.red,
-                                  inactiveColor: Colors.white70,
-                                  onChanged: (value) {
-                                    if (!_dragging) {
+                                  child: Slider(
+                                    value: _latestValue.position.inMilliseconds
+                                        .toDouble(),
+                                    min: 0.0,
+                                    max:
+                                        (_latestValue.duration?.inMilliseconds ??
+                                                0)
+                                            .toDouble(),
+                                    activeColor: Colors.red,
+                                    inactiveColor: Colors.white70,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _latestValue = _latestValue.copyWith(
+                                          position: Duration(
+                                            milliseconds: value.round(),
+                                          ),
+                                        );
+                                      });
+                                    },
+                                    onChangeStart: (value) {
                                       setState(() {
                                         _dragging = true;
                                       });
-                                    }
-                                    setState(() {
-                                      _latestValue = _latestValue.copyWith(
-                                        position: Duration(
-                                          milliseconds: value.round(),
-                                        ),
+                                      widget.onScrubStart?.call();
+                                    },
+                                    onChangeEnd: (value) {
+                                      setState(() {
+                                        _dragging = false;
+                                      });
+                                      widget.onScrubEnd?.call();
+                                      widget.controller.seekTo(
+                                        Duration(milliseconds: value.round()),
                                       );
-                                    });
-                                  },
-                                  onChangeEnd: (value) {
-                                    setState(() {
-                                      _dragging = false;
-                                    });
-                                    widget.controller.seekTo(
-                                      Duration(milliseconds: value.round()),
-                                    );
-                                  },
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                            Text(
-                              _formatDuration(
-                                _latestValue.duration ?? Duration.zero,
+                              Text(
+                                _formatDuration(
+                                  _latestValue.duration ?? Duration.zero,
+                                ),
+                                style: const TextStyle(color: Colors.white),
                               ),
-                              style: const TextStyle(color: Colors.white),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if (widget.videoStreams != null &&
+                                widget.videoStreams!.length > 1)
+                              TextButton.icon(
+                                icon: const Icon(
+                                  Icons.source,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Source",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () => _toggleOptions('source'),
+                              ),
+                            if (widget
+                                .controller
+                                .betterPlayerAsmsTracks
+                                .isNotEmpty)
+                              TextButton.icon(
+                                icon: const Icon(
+                                  Icons.high_quality,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Quality",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () => _toggleOptions('quality'),
+                              ),
+                            if (widget.controller.betterPlayerAsmsAudioTracks !=
+                                    null &&
+                                widget
+                                        .controller
+                                        .betterPlayerAsmsAudioTracks!
+                                        .length >
+                                    1)
+                              TextButton.icon(
+                                icon: const Icon(
+                                  Icons.audiotrack,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Audio",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () => _toggleOptions('audio'),
+                              ),
+                            if (widget
+                                .controller
+                                .betterPlayerSubtitlesSourceList
+                                .isNotEmpty)
+                              TextButton.icon(
+                                icon: const Icon(
+                                  Icons.subtitles,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Subtitles",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () => _toggleOptions('subtitles'),
+                              ),
+                            TextButton.icon(
+                              icon: const Icon(
+                                Icons.aspect_ratio,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Resize",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              onPressed: widget.onResize,
                             ),
                           ],
                         ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          if (widget.videoStreams != null &&
-                              widget.videoStreams!.length > 1)
-                            TextButton.icon(
-                              icon: const Icon(
-                                Icons.source,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Source",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              onPressed: () => _toggleOptions('source'),
-                            ),
-                          if (widget
-                              .controller
-                              .betterPlayerAsmsTracks
-                              .isNotEmpty)
-                            TextButton.icon(
-                              icon: const Icon(
-                                Icons.high_quality,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Quality",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              onPressed: () => _toggleOptions('quality'),
-                            ),
-                          if (widget.controller.betterPlayerAsmsAudioTracks !=
-                                  null &&
-                              widget
-                                      .controller
-                                      .betterPlayerAsmsAudioTracks!
-                                      .length >
-                                  1)
-                            TextButton.icon(
-                              icon: const Icon(
-                                Icons.audiotrack,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Audio",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              onPressed: () => _toggleOptions('audio'),
-                            ),
-                          if (widget
-                              .controller
-                              .betterPlayerSubtitlesSourceList
-                              .isNotEmpty)
-                            TextButton.icon(
-                              icon: const Icon(
-                                Icons.subtitles,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Subtitles",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              onPressed: () => _toggleOptions('subtitles'),
-                            ),
-                          TextButton.icon(
-                            icon: const Icon(
-                              Icons.aspect_ratio,
-                              color: Colors.white,
-                            ),
-                            label: const Text(
-                              "Resize",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            onPressed: widget.onResize,
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -328,7 +398,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
           Align(
             alignment: Alignment.centerRight,
             child: SlideTransition(
-              position: _animation,
+              position: _optionsAnimation,
               child: GestureDetector(
                 onTap: () {},
                 child: Container(

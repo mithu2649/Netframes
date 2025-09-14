@@ -56,7 +56,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       url,
       headers: widget.headers,
       useAsmsSubtitles: true,
-      useAsmsTracks: true,
+      useAsmsAudioTracks: true,
       subtitles: widget.subtitles
           ?.map(
             (s) => BetterPlayerSubtitlesSource(
@@ -75,6 +75,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         aspectRatio: 16 / 9,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           showControls: false, // disable default, we use our custom one
+          enableAudioTracks: true,
         ),
       ),
       betterPlayerDataSource: dataSource,
@@ -83,11 +84,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _startControlsTimer();
   }
 
-  void _startControlsTimer() {
+  void _cancelControlsTimer() {
     _controlsTimer?.cancel();
+  }
+
+  void _startControlsTimer() {
+    _cancelControlsTimer();
     _controlsTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _showControls = false);
+      if (mounted && _showControls) {
+        setState(() {
+          _showControls = false;
+        });
       }
     });
   }
@@ -167,6 +174,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
+        backgroundColor: Colors.black,
         body: GestureDetector(
           onTap: _toggleControls,
           onDoubleTapDown: (details) {
@@ -212,56 +220,61 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   child: BetterPlayer(controller: _controller),
                 ),
               ),
-              AnimatedOpacity(
-                opacity: _showControls ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: _showControls
-                    ? CustomVideoControls(
-                        controller: _controller,
-                        videoStreams: widget.videoStreams,
-                        videoTitle: widget.videoTitle,
-                        onSourceChanged: (url) {
-                          _controller.setupDataSource(
-                            BetterPlayerDataSource(
-                              BetterPlayerDataSourceType.network,
-                              url,
-                              headers: widget.headers,
-                              useAsmsSubtitles: true,
-                              useAsmsTracks: true,
-                              subtitles: widget.subtitles
-                                  ?.map(
-                                    (s) => BetterPlayerSubtitlesSource(
-                                      type: BetterPlayerSubtitlesSourceType
-                                          .network,
-                                      name: s is BetterPlayerSubtitlesSource
-                                          ? s.name
-                                          : (s.label ??
-                                                "Subtitle"), // if provider gave raw map
-                                      urls: [
-                                        s is BetterPlayerSubtitlesSource
-                                            ? s.urls?.first
-                                            : s.url,
-                                      ],
-                                      headers: widget.headers,
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          );
-                        },
-                        onLock: _toggleLock,
-                        isLocked: _isLocked,
-                        onResize: _toggleFit,
-                        onBack: _onWillPop,
-                        onOptionsVisibilityChanged: (visible) {
-                          if (visible) {
-                            _controlsTimer?.cancel();
-                          } else {
-                            _startControlsTimer();
-                          }
-                        },
-                      )
-                    : const SizedBox.shrink(),
+              IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: CustomVideoControls(
+                    show: _showControls,
+                    controller: _controller,
+                    videoStreams: widget.videoStreams,
+                    videoTitle: widget.videoTitle,
+                    onSourceChanged: (url) async {
+                      final position =
+                          _controller.videoPlayerController!.value.position;
+                      await _controller.setupDataSource(
+                        BetterPlayerDataSource(
+                          BetterPlayerDataSourceType.network,
+                          url,
+                          headers: widget.headers,
+                          useAsmsSubtitles: true,
+                          useAsmsAudioTracks: true,
+                          subtitles: widget.subtitles
+                              ?.map(
+                                (s) => BetterPlayerSubtitlesSource(
+                                  type: BetterPlayerSubtitlesSourceType.network,
+                                  name: s is BetterPlayerSubtitlesSource
+                                      ? s.name
+                                      : (s.label ?? "Subtitle"),
+                                  urls: [
+                                    s is BetterPlayerSubtitlesSource
+                                        ? s.urls?.first
+                                        : s.url,
+                                  ],
+                                  headers: widget.headers,
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      );
+                      _controller.seekTo(position);
+                    },
+                    onLock: _toggleLock,
+                    isLocked: _isLocked,
+                    onResize: _toggleFit,
+                    onBack: _onWillPop,
+                    onOptionsVisibilityChanged: (visible) {
+                      if (visible) {
+                        _cancelControlsTimer();
+                      } else {
+                        _startControlsTimer();
+                      }
+                    },
+                    onScrubStart: _cancelControlsTimer,
+                    onScrubEnd: _startControlsTimer,
+                  ),
+                ),
               ),
               if (_feedbackText != null)
                 Center(

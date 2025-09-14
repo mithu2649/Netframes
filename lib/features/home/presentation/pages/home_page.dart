@@ -129,7 +129,7 @@ class HomePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       ChoiceChip(
-                        label: const Text('MPlayer'),
+                        label: const Text('MX Player'),
                         selected: state.selectedProvider == 'MPlayer',
                         avatar:
                             (state is HomeLoading &&
