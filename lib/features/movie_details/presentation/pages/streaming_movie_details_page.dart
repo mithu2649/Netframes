@@ -205,45 +205,30 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                       print("Sanitized episode title: $episodeTitle");
                                     }
                                     return ListTile(
-                                      leading: widget.movie.provider != 'NOXX' ? SizedBox(
-                                        width: 100,
-                                        height: 100,
-                                        child: (state is StreamingLinksLoading &&
-                                                state.id == episode.id)
-                                            ? const Center(
-                                                child:
-                                                    CircularProgressIndicator(),
-                                              )
-                                            : episode.thumbnail != null
-                                                ? Image.network(
-                                                    episode.thumbnail!,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (
-                                                      BuildContext context,
-                                                      Widget child,
-                                                      ImageChunkEvent?
-                                                          loadingProgress,
-                                                    ) {
-                                                      if (loadingProgress ==
-                                                          null) {
-                                                        return child;
-                                                      }
-                                                      return const Center(
-                                                        child:
-                                                            CircularProgressIndicator(),
-                                                      );
-                                                    },
-                                                    errorBuilder: (
-                                                      context,
-                                                      error,
-                                                      stackTrace,
-                                                    ) =>
-                                                        const Icon(Icons.error),
-                                                  )
-                                                : const Icon(
-                                                    Icons.image_not_supported,
-                                                  ),
-                                      ) : null,
+                                      leading: SizedBox(
+                                          width: 100,
+                                          height: 100,
+                                          child: (state is StreamingLinksLoading && state.id == episode.id)
+                                              ? const Center(child: CircularProgressIndicator())
+                                              : Image.network(
+                                                  episode.thumbnail?.isNotEmpty == true
+                                                      ? episode.thumbnail!
+                                                      : (details.backdropPath?.isNotEmpty == true
+                                                          ? details.backdropPath!
+                                                          : (details.posterPath?.isNotEmpty == true
+                                                              ? details.posterPath!
+                                                              : (widget.movie.backdropPath?.isNotEmpty == true
+                                                                  ? widget.movie.backdropPath!
+                                                                  : widget.movie.posterPath ?? ''))),
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (context, child, loadingProgress) {
+                                                    if (loadingProgress == null) return child;
+                                                    return const Center(child: CircularProgressIndicator());
+                                                  },
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      const Icon(Icons.error),
+                                                ),
+                                        ),
                                       title: Text(episodeTitle),
                                       subtitle: Text(
                                         'Season ${episode.season}, Episode ${episode.episode}',

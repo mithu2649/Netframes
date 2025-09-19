@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:better_player/better_player.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
@@ -7,6 +6,7 @@ import 'package:netframes/features/home/data/providers/streaming_provider.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/home/domain/entities/netflix_movie_details.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
+import 'package:js_unpack/js_unpack.dart';
 
 class NoxxProvider implements StreamingProvider {
   @override
@@ -255,54 +255,97 @@ class NoxxProvider implements StreamingProvider {
     }
   }
 
-  @override
-  Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
-    await _bypassDdosGuard();
-    if (episode == null) {
-      throw Exception('Episode must be provided for Noxx provider');
-    }
+@override
+Future<Map<String, dynamic>> loadLink(Movie movie, {NetflixEpisode? episode}) async {
+  await _bypassDdosGuard();
+  if (episode == null) {
+    throw Exception('Episode must be provided for Noxx provider');
+  }
 
-    final response1 = await http.get(Uri.parse(episode.id), headers: {'Referer': _baseUrl, 'Cookie': _cookie});
-    if (response1.statusCode != 200) {
-      throw Exception('Failed to load episode page');
-    }
-    final doc1 = parser.parse(response1.body);
-    final iframeSrc1 = doc1.querySelector('div.h-vw-65 iframe.w-full')?.attributes['src'];
-    if (iframeSrc1 == null) {
-      throw Exception('Could not find iframe 1');
-    }
+  final response1 = await http.get(
+    Uri.parse(episode.id),
+    headers: {'Referer': _baseUrl, 'Cookie': _cookie},
+  );
+  if (response1.statusCode != 200) {
+    throw Exception('Failed to load episode page');
+  }
 
-    final response2 = await http.get(Uri.parse(iframeSrc1), headers: {'Referer': _baseUrl, 'Cookie': _cookie});
-    if (response2.statusCode != 200) {
-      throw Exception('Failed to load iframe 1');
-    }
-    final doc2 = parser.parse(response2.body);
-    final iframeSrc2 = doc2.querySelector('iframe')?.attributes['src'];
-    if (iframeSrc2 == null) {
-      throw Exception('Could not find iframe 2');
-    }
+  final doc1 = parser.parse(response1.body);
+  final iframeSrc1 = doc1.querySelector('div.h-vw-65 iframe.w-full')?.attributes['src'];
+  if (iframeSrc1 == null) throw Exception('Could not find iframe 1');
 
-    final embedUrl = iframeSrc2.replaceFirst('/download/', '/e/');
-    final response3 = await http.get(Uri.parse(embedUrl), headers: {'Accept-Language': 'en-US,en;q=0.9', 'Referer': _baseUrl, 'Cookie': _cookie});
-    if (response3.statusCode != 200) {
-      throw Exception('Failed to load embed url');
-    }
+  final response2 = await http.get(
+    Uri.parse(iframeSrc1),
+    headers: {'Referer': _baseUrl, 'Cookie': _cookie},
+  );
+  if (response2.statusCode != 200) throw Exception('Failed to load iframe 1');
 
-    final m3u8Match = RegExp(r'file:\s*"([^"]*m3u8[^"]*)"').firstMatch(response3.body);
-    final m3u8Url = m3u8Match?.group(1);
+  final doc2 = parser.parse(response2.body);
+  final iframeSrc2 = doc2.querySelector('iframe')?.attributes['src'];
+  if (iframeSrc2 == null) throw Exception('Could not find iframe 2');
 
-    if (m3u8Url != null) {
-      final videoStreams = [
-        VideoStream(
-          url: m3u8Url,
-          quality: 'Unknown',
-          headers: {'Referer': embedUrl, 'Cookie': _cookie},
-          cookies: {},
-        ),
-      ];
-      return {'streams': videoStreams, 'subtitles': []};
-    } else {
-      throw Exception('Could not find m3u8 url');
+  final embedUrl = iframeSrc2.replaceFirst('/download/', '/e/');
+
+  // derive scheme+host for dynamic headers
+  final embedUri = Uri.parse(embedUrl);
+  final embedOrigin = '${embedUri.scheme}://${embedUri.host}';
+
+  final response3 = await http.get(
+    embedUri,
+    headers: {
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': embedOrigin,      // dynamic
+      'Origin': embedOrigin,       // dynamic
+      'Cookie': _cookie,
+    },
+  );
+  if (response3.statusCode != 200) throw Exception('Failed to load embed url');
+
+  // find m3u8 link
+  RegExp m3u8Pattern = RegExp(r'file:\s*"([^"]*m3u8[^"]*)"');
+  String? m3u8Url = m3u8Pattern.firstMatch(response3.body)?.group(1);
+
+  if (m3u8Url == null) {
+    final doc3 = parser.parse(response3.body);
+    for (var script in doc3.querySelectorAll('script')) {
+      if (script.text.contains('sources')) {
+        String content = script.text;
+        try {
+          if (JsUnpack.detect(content)) {
+            final unpacked = JsUnpack(content).unpack();
+            m3u8Url = m3u8Pattern.firstMatch(unpacked)?.group(1);
+          } else {
+            m3u8Url = m3u8Pattern.firstMatch(content)?.group(1);
+          }
+        } catch (_) {}
+        break;
+      }
     }
   }
+
+  if (m3u8Url != null) {
+    final videoStreams = [
+      VideoStream(
+        url: m3u8Url,
+        quality: 'Unknown',
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (X11; Linux x86_64; rv:144.0) Gecko/20100101 Firefox/144.0',
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Origin': embedOrigin,        // dynamic
+          'Connection': 'keep-alive',
+          'Referer': embedOrigin,       // dynamic
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'cross-site',
+        },
+        cookies: {},
+      ),
+    ];
+    return {'streams': videoStreams, 'subtitles': []};
+  } else {
+    throw Exception('Could not find m3u8 url');
+  }
+}
 }

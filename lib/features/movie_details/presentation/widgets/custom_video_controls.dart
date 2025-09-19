@@ -445,7 +445,15 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       case 'quality':
         return ListView(
           children: widget.controller.betterPlayerAsmsTracks.map((track) {
-            final height = track.height ?? 0;
+            // final height = track.height ?? 0;
+            final height = track.height;
+            final label = (height != null && height > 0)
+            ? '${height}p'
+            : (track.bitrate != null && track.bitrate! > 0)
+                ? '${(track.bitrate! / 1000).round()} kbps'
+                : 'Auto';
+
+
             return InkWell(
               onTap: () {
                 widget.controller.setTrack(track);
@@ -453,7 +461,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
               },
               child: RadioListTile<BetterPlayerAsmsTrack>(
                 title: Text(
-                  "${height}p",
+                  label,
                   style: const TextStyle(color: Colors.white),
                 ),
                 value: track,
