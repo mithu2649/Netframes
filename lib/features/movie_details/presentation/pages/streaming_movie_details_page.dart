@@ -37,6 +37,7 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
             primeVideoProvider: homeBloc.primeVideoProvider,
             dramaDripProvider: homeBloc.dramaDripProvider,
             mPlayerProvider: homeBloc.mPlayerProvider,
+            noxxProvider: homeBloc.noxxProvider,
           )..add(
             FetchStreamingMovieDetails(
               widget.movie,
@@ -66,21 +67,22 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                   : state is StreamingLinksLoading
                       ? state.movieDetails
                       : (state as StreamingLinksLoaded).movieDetails;
+              final backdropPath = details.backdropPath ?? widget.movie.backdropPath;
+              final posterPath = details.posterPath ?? widget.movie.posterPath;
               return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (widget.movie.backdropPath != '' &&
-                        widget.movie.backdropPath.isNotEmpty)
+                    if (backdropPath.isNotEmpty)
                       Image.network(
-                        widget.movie.backdropPath,
+                        backdropPath,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 250,
                       )
-                    else if (widget.movie.posterPath.isNotEmpty)
+                    else if (posterPath.isNotEmpty)
                       Image.network(
-                        widget.movie.posterPath,
+                        posterPath,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 250,
@@ -95,7 +97,23 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 8),
-                          Text('Year: ${details.year} • ${details.runtime}'),
+                          Row(
+                            children: [
+                              if (details.rating != null)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber),
+                                    const SizedBox(width: 4),
+                                    Text('Rating: ${details.rating! / 10}'),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                              if (details.year.isNotEmpty)
+                                Text('Year: ${details.year}'),
+                              if (details.runtime.isNotEmpty)
+                                Text(' • ${details.runtime}'),
+                            ],
+                          ),
                           const SizedBox(height: 8),
                           Text('Plot: ${details.plot}'),
                           const SizedBox(height: 8),
@@ -175,8 +193,19 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                     final episode = details
                                         .seasons[_selectedSeasonIndex]
                                         .episodes[index];
+                                    var episodeTitle = episode.title;
+                                    if (kDebugMode) {
+                                      print("Original episode title: $episodeTitle");
+                                    }
+                                    episodeTitle = episodeTitle.replaceAll(RegExp(r'Now Playing', caseSensitive: false, multiLine: true), '').trim();
+                                    episodeTitle = episodeTitle.replaceAll(RegExp(r'Episode\s*\d+', caseSensitive: false, multiLine: true), '').trim();
+                                    episodeTitle = episodeTitle.replaceAll(RegExp(r'\s+'), ' ').trim();
+                                    episodeTitle = episodeTitle.replaceAll(RegExp(r'^\s*:\s*'), '').trim();
+                                    if (kDebugMode) {
+                                      print("Sanitized episode title: $episodeTitle");
+                                    }
                                     return ListTile(
-                                      leading: SizedBox(
+                                      leading: widget.movie.provider != 'NOXX' ? SizedBox(
                                         width: 100,
                                         height: 100,
                                         child: (state is StreamingLinksLoading &&
@@ -214,8 +243,8 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                 : const Icon(
                                                     Icons.image_not_supported,
                                                   ),
-                                      ),
-                                      title: Text(episode.title),
+                                      ) : null,
+                                      title: Text(episodeTitle),
                                       subtitle: Text(
                                         'Season ${episode.season}, Episode ${episode.episode}',
                                       ),

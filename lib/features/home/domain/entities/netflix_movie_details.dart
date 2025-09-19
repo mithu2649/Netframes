@@ -53,6 +53,8 @@ class NetflixMovieDetails extends Equatable {
   final String? trailer;
   final List<Movie> recommendations;
   final String? backdropPath;
+  final String? posterPath;
+  final int? rating;
 
   const NetflixMovieDetails({
     this.title = '',
@@ -66,6 +68,8 @@ class NetflixMovieDetails extends Equatable {
     this.trailer,
     this.recommendations = const [],
     this.backdropPath,
+    this.posterPath,
+    this.rating,
   });
 
   @override

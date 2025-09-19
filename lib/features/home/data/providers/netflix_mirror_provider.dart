@@ -143,7 +143,7 @@ class NetflixMirrorProvider implements StreamingProvider {
           if (src == null || src.isEmpty) continue;
 
           final id = src.split('/').last.split('.').first;
-          if (id.isEmpty) continue;
+          if (id.isEmpty || int.tryParse(id) == null) continue;
 
           movies.add(
             Movie(
@@ -203,6 +203,9 @@ class NetflixMirrorProvider implements StreamingProvider {
         throw Exception('Failed to load movie details: ${data["error"]}');
       }
       final postData = _PostData.fromJson(data);
+      if (postData.title.trim().isEmpty) {
+        throw Exception('Movie title is empty for ID: ${movie.id}');
+      }
       final seasons = <NetflixSeason>[];
 
       if (postData.episodes.isEmpty || postData.episodes.first == null) {
@@ -675,7 +678,7 @@ class _PostData {
       nextPageSeason: json['nextPageSeason'] as String?,
       nextPageShow: json['nextPageShow'] as int?,
       season: json['season'] as List?,
-      title: json['title'],
+      title: json['title'] ?? '',
       year: json['year'],
       cast: json['cast'] as String?,
       match: json['match'] as String?,

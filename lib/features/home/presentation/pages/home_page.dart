@@ -155,6 +155,32 @@ class HomePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       ChoiceChip(
+                        label: const Text('NOXX'),
+                        selected: state.selectedProvider == 'NOXX',
+                        avatar:
+                            (state is HomeLoading &&
+                                state.selectedProvider == 'NOXX')
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                        showCheckmark:
+                            !(state is HomeLoading &&
+                                state.selectedProvider == 'NOXX'),
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('NOXX'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
                         label: const Text('TMDB'),
                         selected: state.selectedProvider == 'TMDB',
                         avatar:

@@ -6,6 +6,7 @@ import 'package:netframes/core/services/theme_service.dart';
 import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
+import 'package:netframes/features/home/data/providers/noxx_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/home/presentation/bloc/home_bloc.dart';
 import 'package:netframes/features/home/presentation/bloc/home_event.dart';
@@ -23,6 +24,7 @@ void main() async {
   final primeVideoProvider = PrimeVideoProvider();
   final dramaDripProvider = DramaDripProvider();
   final mPlayerProvider = MPlayerProvider();
+  final noxxProvider = NoxxProvider();
   // Pre-fetch the cookies at startup
   await netflixMirrorProvider.bypass();
   await jioHotstarProvider.bypass();
@@ -35,6 +37,7 @@ void main() async {
       primeVideoProvider: primeVideoProvider,
       dramaDripProvider: dramaDripProvider,
       mPlayerProvider: mPlayerProvider,
+      noxxProvider: noxxProvider,
     ),
   );
 }
@@ -45,6 +48,7 @@ class MyApp extends StatelessWidget {
   final PrimeVideoProvider primeVideoProvider;
   final DramaDripProvider dramaDripProvider;
   final MPlayerProvider mPlayerProvider;
+  final NoxxProvider noxxProvider;
 
   const MyApp({
     super.key,
@@ -53,6 +57,7 @@ class MyApp extends StatelessWidget {
     required this.primeVideoProvider,
     required this.dramaDripProvider,
     required this.mPlayerProvider,
+    required this.noxxProvider,
   });
 
   @override
@@ -67,6 +72,7 @@ class MyApp extends StatelessWidget {
             primeVideoProvider: primeVideoProvider,
             dramaDripProvider: dramaDripProvider,
             mPlayerProvider: mPlayerProvider,
+            noxxProvider: noxxProvider,
           )..add(const FetchHomeData('Netflix')),
         ),
         BlocProvider(

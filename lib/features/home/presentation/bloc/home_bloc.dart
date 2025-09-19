@@ -4,6 +4,7 @@ import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
+import 'package:netframes/features/home/data/providers/noxx_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/home/presentation/bloc/home_event.dart';
 import 'package:netframes/features/home/presentation/bloc/home_state.dart';
@@ -15,6 +16,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final PrimeVideoProvider primeVideoProvider;
   final DramaDripProvider dramaDripProvider;
   final MPlayerProvider mPlayerProvider;
+  final NoxxProvider noxxProvider;
 
   HomeBloc({
     required this.movieApiService,
@@ -23,6 +25,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required this.primeVideoProvider,
     required this.dramaDripProvider,
     required this.mPlayerProvider,
+    required this.noxxProvider,
   }) : super(HomeLoading(selectedProvider: 'Netflix')) {
     on<FetchHomeData>((event, emit) async {
       try {
@@ -41,6 +44,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         } else if (event.provider == 'MPlayer') {
           final movies = await mPlayerProvider.getHomePage();
           emit(HomeLoaded(movies: movies, selectedProvider: 'MPlayer'));
+        } else if (event.provider == 'NOXX') {
+          final movies = await noxxProvider.getHomePage();
+          emit(HomeLoaded(movies: movies, selectedProvider: 'NOXX'));
         } else {
           final popularMovies = await movieApiService.getPopularMovies();
           final topRatedMovies = await movieApiService.getTopRatedMovies();

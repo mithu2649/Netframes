@@ -4,6 +4,7 @@ import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
+import 'package:netframes/features/home/data/providers/noxx_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/home/domain/entities/netflix_movie_details.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
@@ -17,6 +18,7 @@ class StreamingMovieDetailsBloc
   final PrimeVideoProvider primeVideoProvider;
   final DramaDripProvider dramaDripProvider;
   final MPlayerProvider mPlayerProvider;
+  final NoxxProvider noxxProvider;
 
   StreamingMovieDetailsBloc({
     required this.netflixMirrorProvider,
@@ -24,6 +26,7 @@ class StreamingMovieDetailsBloc
     required this.primeVideoProvider,
     required this.dramaDripProvider,
     required this.mPlayerProvider,
+    required this.noxxProvider,
   }) : super(StreamingMovieDetailsLoading()) {
     on<FetchStreamingMovieDetails>((event, emit) async {
       if (kDebugMode) {
@@ -62,6 +65,12 @@ class StreamingMovieDetailsBloc
             event.movie,
           );
           print('Successfully fetched MPlayer movie details.');
+          emit(StreamingMovieDetailsLoaded(movieDetails));
+        } else if (event.provider == 'NOXX') {
+          final movieDetails = await noxxProvider.getMovieDetails(
+            event.movie,
+          );
+          print('Successfully fetched NOXX movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         }
       } catch (e) {
@@ -107,6 +116,11 @@ class StreamingMovieDetailsBloc
             );
           } else if (event.movie.provider == 'MPlayer') {
             result = await mPlayerProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'NOXX') {
+            result = await noxxProvider.loadLink(
               event.movie,
               episode: event.episode,
             );
