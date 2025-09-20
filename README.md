@@ -1,9 +1,8 @@
-# Netframes 🎬
+# Netframes
 
 Netframes is a **Flutter-based movie app** that aggregates publicly available streaming sources and displays them in a smooth, intuitive interface.  
 It uses a modular “provider” system to fetch movie data from multiple open websites and APIs.
 
----
 
 ##  Features
 - **Multiple Providers** – Pluggable architecture to pull content from various public sources.
