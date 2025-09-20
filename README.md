@@ -1,16 +1,28 @@
-# netframes
+# Netframes
 
-A new Flutter project.
+Netframes is a **Flutter-based movie app** that aggregates publicly available streaming sources and displays them in a smooth, intuitive interface.  
+It uses a modular “provider” system to fetch movie data from multiple open websites and APIs.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+##  Features
+- **Multiple Providers** – Pluggable architecture to pull content from various public sources.
+- **Dynamic Scraping** – Gathers movie details, metadata, and playable links on the fly.
+- **Intuitive UI** – Clean Material Design with responsive layouts for phones and tablets.
+- **Cross-Platform** – Works on Android, iOS, and any platform supported by Flutter.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🚀 Getting Started
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) (latest stable)
+- Dart 3+
+- Android Studio 
+
+### Setup
+```bash
+git clone https://github.com/yourusername/Netframes.git
+cd Netframes
+flutter pub get
+flutter run
+
