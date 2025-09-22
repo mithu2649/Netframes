@@ -1,4 +1,3 @@
-// GEMINI_DEBUG: Adding headers to VideoStream
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
@@ -151,20 +150,57 @@ class HiAnimeProvider {
     }
   }
 
+  Future<List<VideoStream>> _m3u8Generation(String m3u8Url, Map<String, String> headers) async {
+    print('[_m3u8Generation] Fetching m3u8: $m3u8Url');
+    final List<VideoStream> streams = [];
+    final m3u8Parent = (m3u8Url.split('/')..removeLast()).join('/');
+    print('[_m3u8Generation] m3u8 parent: $m3u8Parent');
+    final response = await http.get(Uri.parse(m3u8Url), headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch m3u8 file: ${response.statusCode}');
+    }
+
+    final lines = response.body.split('\n');
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.startsWith('#EXT-X-STREAM-INF')) {
+        final qualityMatch = RegExp(r'RESOLUTION=\d+x(\d+)').firstMatch(line);
+        final quality = qualityMatch?.group(1);
+        var streamUrl = lines[i + 1];
+        print('[_m3u8Generation] Found stream: $streamUrl');
+        if (!streamUrl.startsWith('http')) {
+          streamUrl = '$m3u8Parent/$streamUrl';
+          print('[_m3u8Generation] Resolved stream url: $streamUrl');
+        }
+        if (streamUrl.endsWith('.m3u8')) {
+          streams.addAll(await _m3u8Generation(streamUrl, headers));
+        } else {
+          streams.add(VideoStream(url: streamUrl, quality: quality ?? 'Unknown', headers: headers));
+        }
+      }
+    }
+    if (streams.isEmpty) {
+      streams.add(VideoStream(url: m3u8Url, quality: 'Unknown', headers: headers));
+    }
+
+    return streams;
+  }
+
   Future<Map<String, dynamic>> _megacloudExtractorPrimary(String url) async {
     print('[_megacloudExtractorPrimary] URL: $url');
     final headers = {
       'Accept': '*/*',
       'X-Requested-With': 'XMLHttpRequest',
-      'Referer': 'https://megacloud.blog/',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
+      'Referer': url,
     };
 
     final videoId = url.split('/').last.split('?').first;
     print('[_megacloudExtractorPrimary] Video ID: $videoId');
 
     final nonceResponse = await http.get(Uri.parse(url), headers: headers);
-    final nonce = RegExp(r'\b[a-zA-Z0-9]{48}\b').firstMatch(nonceResponse.body)?.group(0) ??
+    final nonce = RegExp(r'\b[a-zA-Z0-9]{48}\b').firstMatch(nonceResponse.body)?.group(0) ?? 
         RegExp(r'\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b')
             .firstMatch(nonceResponse.body)
             ?.let((it) => it.group(1)! + it.group(2)! + it.group(3)!);
@@ -176,17 +212,20 @@ class HiAnimeProvider {
     final response = await http.get(Uri.parse(sourceUrl), headers: headers);
     print('[_megacloudExtractorPrimary] Source response: ${response.body}');
 
-    final sources = jsonDecode(response.body)['sources'];
+    final data = jsonDecode(response.body);
+    final sources = data['sources'];
+    final tracks = data['tracks'];
+
     final mainHeaders = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
-      'Accept': '*/*',
-      'Accept-Language': 'en-US,en;q=0.5',
-      'Accept-Encoding': 'gzip, deflate, br, zstd',
-      'Origin': 'https://megacloud.blog',
-      'Referer': 'https://megacloud.blog/',
-      'Connection': 'keep-alive',
-      'Pragma': 'no-cache',
-      'Cache-Control': 'no-cache'
+      'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:144.0) Gecko/20100101 Firefox/144.0',
+      'accept': '*/*',
+      'accept-language': 'en-US,en;q=0.5',
+      'origin': 'https://megacloud.blog',
+      'referer': 'https://megacloud.blog/',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-site': 'cross-site',
+      'te': 'trailers',
     };
 
     if (sources is String) {
@@ -198,25 +237,26 @@ class HiAnimeProvider {
       final fullUrl = '$decodeUrl?encrypted_data=${Uri.encodeComponent(sources)}&nonce=${Uri.encodeComponent(nonce!)}&secret=${Uri.encodeComponent(key)}';
 
       final decryptedResponse = await http.get(Uri.parse(fullUrl));
-      final m3u8 = RegExp(r'"file":"(.*?)"').firstMatch(decryptedResponse.body)?.group(1) ?? '';
-      print('[_megacloudExtractorPrimary] M3U8: $m3u8');
+      final m3u8Url = RegExp(r'"file":"(.*?)"').firstMatch(decryptedResponse.body)?.group(1) ?? '';
+      print('[_megacloudExtractorPrimary] M3U8: $m3u8Url');
 
-      final subtitles = (jsonDecode(response.body)['tracks'] as List)
+      final streams = await _m3u8Generation(m3u8Url, mainHeaders);
+
+      final subtitles = (tracks as List)
           .where((e) => e['kind'] == 'captions')
           .map((e) => SubtitleFile(e['label'], e['file']))
           .toList();
 
       return {
-        'streams': [VideoStream(url: m3u8, quality: 'Unknown', headers: mainHeaders)],
+        'streams': streams,
         'subtitles': subtitles.map((e) => e.file).toList(),
       };
     } else {
       print('[_megacloudExtractorPrimary] Sources are not encrypted');
-      final streams = (sources as List)
-          .map((e) => VideoStream(url: e['file'], quality: e['label'] ?? 'default', headers: mainHeaders))
-          .toList();
+      final m3u8Url = (sources as List).first['file'];
+      final streams = await _m3u8Generation(m3u8Url, mainHeaders);
 
-      final subtitles = (jsonDecode(response.body)['tracks'] as List)
+      final subtitles = (tracks as List)
           .where((e) => e['kind'] == 'captions')
           .map((e) => SubtitleFile(e['label'], e['file']))
           .toList();
@@ -230,8 +270,18 @@ class HiAnimeProvider {
 
   Future<Map<String, dynamic>> _megacloudExtractorFallback(String url) async {
     print('[_megacloudExtractorFallback] URL: $url');
+    final jsToClickPlay = """
+      (() => {
+          const btn = document.querySelector('.jw-icon-display.jw-button-color.jw-reset');
+          if (btn) { btn.click(); return \"clicked\"; } 
+          return \"button not found\";
+      })();
+    """;
+
     final resolver = WebViewResolver(
       interceptUrl: RegExp(r'\.m3u8'),
+      script: jsToClickPlay,
+      timeout: 15000,
     );
 
     final m3u8Url = await resolver.resolve(url);

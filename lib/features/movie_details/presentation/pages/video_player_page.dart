@@ -49,12 +49,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    final url = widget.videoUrl ?? widget.videoStreams!.first.url;
+    final firstStream = widget.videoStreams!.first;
+    final url = widget.videoUrl ?? firstStream.url;
+    final headers = widget.headers ?? firstStream.headers;
 
     final dataSource = BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       url,
-      headers: widget.headers,
+      headers: headers,
       useAsmsSubtitles: true,
       useAsmsAudioTracks: true,
       subtitles: widget.subtitles
@@ -233,11 +235,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     onSourceChanged: (url) async {
                       final position =
                           _controller.videoPlayerController!.value.position;
+                      VideoStream? selectedStream;
+                      try {
+                        selectedStream = widget.videoStreams?.firstWhere((s) => s.url == url);
+                      } catch (e) {
+                        selectedStream = null;
+                      }
                       await _controller.setupDataSource(
                         BetterPlayerDataSource(
                           BetterPlayerDataSourceType.network,
                           url,
-                          headers: widget.headers,
+                          headers: selectedStream?.headers ?? widget.headers,
                           useAsmsSubtitles: true,
                           useAsmsAudioTracks: true,
                           subtitles: widget.subtitles
@@ -252,7 +260,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                                         ? s.urls?.first
                                         : s.url,
                                   ],
-                                  headers: widget.headers,
+                                  headers: selectedStream?.headers ?? widget.headers,
                                 ),
                               )
                               .toList(),
