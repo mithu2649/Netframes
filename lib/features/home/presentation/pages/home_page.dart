@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:netframes/core/widgets/shimmer_loading.dart';
 import 'package:netframes/features/home/presentation/bloc/home_bloc.dart';
 import 'package:netframes/features/home/presentation/bloc/home_event.dart';
 import 'package:netframes/features/home/presentation/bloc/home_state.dart';
@@ -175,6 +174,32 @@ class HomePage extends StatelessWidget {
                           if (selected) {
                             context.read<HomeBloc>().add(
                               const SelectProvider('NOXX'),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text('HiAnime'),
+                        selected: state.selectedProvider == 'HiAnime',
+                        avatar:
+                            (state is HomeLoading &&
+                                state.selectedProvider == 'HiAnime')
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                        showCheckmark:
+                            !(state is HomeLoading &&
+                                state.selectedProvider == 'HiAnime'),
+                        onSelected: (selected) {
+                          if (selected) {
+                            context.read<HomeBloc>().add(
+                              const SelectProvider('HiAnime'),
                             );
                           }
                         },

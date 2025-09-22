@@ -33,10 +33,10 @@ class CustomVideoControls extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _CustomVideoControlsState createState() => _CustomVideoControlsState();
+  CustomVideoControlsState createState() => CustomVideoControlsState();
 }
 
-class _CustomVideoControlsState extends State<CustomVideoControls>
+class CustomVideoControlsState extends State<CustomVideoControls>
     with TickerProviderStateMixin {
   late VideoPlayerValue _latestValue;
   bool _dragging = false;

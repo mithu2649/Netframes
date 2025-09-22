@@ -203,6 +203,7 @@ class MPlayerProvider implements StreamingProvider {
             '[MPlayerProvider] Fetching episodes for season ${season.season}...',
           );
         }
+        // ignore: unused_local_variable
         var page = 1;
         String? nextQuery;
         do {

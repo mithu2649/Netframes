@@ -24,7 +24,8 @@ class MovieCard extends StatelessWidget {
             movie.provider == 'JioHotstar' ||
             movie.provider == 'PrimeVideo' ||
             movie.provider == 'DramaDrip' ||
-            movie.provider == 'MPlayer'
+            movie.provider == 'MPlayer' ||
+            movie.provider == 'HiAnime'
         ? movie.posterPath
         : 'https://image.tmdb.org/t/p/w500${movie.posterPath}';
 

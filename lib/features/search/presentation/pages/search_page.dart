@@ -9,7 +9,6 @@ import 'package:netframes/features/home/data/providers/prime_video_provider.dart
 import 'package:netframes/features/home/data/providers/streaming_provider.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/home/presentation/widgets/movie_card.dart';
-import 'package:netframes/features/movie_details/presentation/pages/streaming_movie_details_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

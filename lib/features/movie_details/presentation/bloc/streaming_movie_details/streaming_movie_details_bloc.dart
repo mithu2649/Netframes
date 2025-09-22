@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
+import 'package:netframes/features/home/data/providers/hianime_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
@@ -19,6 +20,7 @@ class StreamingMovieDetailsBloc
   final DramaDripProvider dramaDripProvider;
   final MPlayerProvider mPlayerProvider;
   final NoxxProvider noxxProvider;
+  final HiAnimeProvider hiAnimeProvider;
 
   StreamingMovieDetailsBloc({
     required this.netflixMirrorProvider,
@@ -27,6 +29,7 @@ class StreamingMovieDetailsBloc
     required this.dramaDripProvider,
     required this.mPlayerProvider,
     required this.noxxProvider,
+    required this.hiAnimeProvider,
   }) : super(StreamingMovieDetailsLoading()) {
     on<FetchStreamingMovieDetails>((event, emit) async {
       if (kDebugMode) {
@@ -71,6 +74,12 @@ class StreamingMovieDetailsBloc
             event.movie,
           );
           print('Successfully fetched NOXX movie details.');
+          emit(StreamingMovieDetailsLoaded(movieDetails));
+        } else if (event.provider == 'HiAnime') {
+          final movieDetails = await hiAnimeProvider.getMovieDetails(
+            event.movie,
+          );
+          print('Successfully fetched HiAnime movie details.');
           emit(StreamingMovieDetailsLoaded(movieDetails));
         }
       } catch (e) {
@@ -121,6 +130,11 @@ class StreamingMovieDetailsBloc
             );
           } else if (event.movie.provider == 'NOXX') {
             result = await noxxProvider.loadLink(
+              event.movie,
+              episode: event.episode,
+            );
+          } else if (event.movie.provider == 'HiAnime') {
+            result = await hiAnimeProvider.loadLink(
               event.movie,
               episode: event.episode,
             );

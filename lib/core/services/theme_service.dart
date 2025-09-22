@@ -21,7 +21,7 @@ class ThemeService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_themeModeKey, themeMode.index);
     } catch (e) {
-      print('ThemeService: Error in saveThemeMode: $e');
+      return  Future.value(); // Ignore errors
     }
   }
 

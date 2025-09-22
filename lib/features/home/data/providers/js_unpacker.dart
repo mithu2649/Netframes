@@ -7,7 +7,7 @@ class JsUnpacker {
 
   bool detect() {
     if (_packedJS == null) return false;
-    final js = _packedJS!.replaceAll(' ', '');
+    final js = _packedJS.replaceAll(' ', '');
     final p = RegExp(r"eval\(function\(p,a,c,k,e,[rd]");
     return p.hasMatch(js);
   }
@@ -122,7 +122,7 @@ class JsUnpacker {
       return decoded;
     }
   } catch (e) {
-    print("Unpack error: $e");
+    return e.toString();
   }
   return null;
 }

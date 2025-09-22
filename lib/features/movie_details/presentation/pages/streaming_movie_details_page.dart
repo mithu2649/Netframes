@@ -38,6 +38,7 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
             dramaDripProvider: homeBloc.dramaDripProvider,
             mPlayerProvider: homeBloc.mPlayerProvider,
             noxxProvider: homeBloc.noxxProvider,
+            hiAnimeProvider: homeBloc.hiAnimeProvider,
           )..add(
             FetchStreamingMovieDetails(
               widget.movie,
@@ -194,16 +195,10 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                         .seasons[_selectedSeasonIndex]
                                         .episodes[index];
                                     var episodeTitle = episode.title;
-                                    if (kDebugMode) {
-                                      print("Original episode title: $episodeTitle");
-                                    }
                                     episodeTitle = episodeTitle.replaceAll(RegExp(r'Now Playing', caseSensitive: false, multiLine: true), '').trim();
-                                    episodeTitle = episodeTitle.replaceAll(RegExp(r'Episode\s*\d+', caseSensitive: false, multiLine: true), '').trim();
                                     episodeTitle = episodeTitle.replaceAll(RegExp(r'\s+'), ' ').trim();
                                     episodeTitle = episodeTitle.replaceAll(RegExp(r'^\s*:\s*'), '').trim();
-                                    if (kDebugMode) {
-                                      print("Sanitized episode title: $episodeTitle");
-                                    }
+                                   
                                     return ListTile(
                                       leading: SizedBox(
                                           width: 100,
@@ -217,9 +212,9 @@ class _StreamingMovieDetailsPageState extends State<StreamingMovieDetailsPage> {
                                                           ? details.backdropPath!
                                                           : (details.posterPath?.isNotEmpty == true
                                                               ? details.posterPath!
-                                                              : (widget.movie.backdropPath?.isNotEmpty == true
-                                                                  ? widget.movie.backdropPath!
-                                                                  : widget.movie.posterPath ?? ''))),
+                                                              : (widget.movie.backdropPath.isNotEmpty == true
+                                                                  ? widget.movie.backdropPath
+                                                                  : widget.movie.posterPath))),
                                                   fit: BoxFit.cover,
                                                   loadingBuilder: (context, child, loadingProgress) {
                                                     if (loadingProgress == null) return child;
