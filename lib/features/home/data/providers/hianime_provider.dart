@@ -150,44 +150,6 @@ class HiAnimeProvider {
     }
   }
 
-  Future<List<VideoStream>> _m3u8Generation(String m3u8Url, Map<String, String> headers) async {
-    print('[_m3u8Generation] Fetching m3u8: $m3u8Url');
-    final List<VideoStream> streams = [];
-    final m3u8Parent = (m3u8Url.split('/')..removeLast()).join('/');
-    print('[_m3u8Generation] m3u8 parent: $m3u8Parent');
-    final response = await http.get(Uri.parse(m3u8Url), headers: headers);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch m3u8 file: ${response.statusCode}');
-    }
-
-    final lines = response.body.split('\n');
-
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      if (line.startsWith('#EXT-X-STREAM-INF')) {
-        final qualityMatch = RegExp(r'RESOLUTION=\d+x(\d+)').firstMatch(line);
-        final quality = qualityMatch?.group(1);
-        var streamUrl = lines[i + 1];
-        print('[_m3u8Generation] Found stream: $streamUrl');
-        if (!streamUrl.startsWith('http')) {
-          streamUrl = '$m3u8Parent/$streamUrl';
-          print('[_m3u8Generation] Resolved stream url: $streamUrl');
-        }
-        if (streamUrl.endsWith('.m3u8')) {
-          streams.addAll(await _m3u8Generation(streamUrl, headers));
-        } else {
-          streams.add(VideoStream(url: streamUrl, quality: quality ?? 'Unknown', headers: headers));
-        }
-      }
-    }
-    if (streams.isEmpty) {
-      streams.add(VideoStream(url: m3u8Url, quality: 'Unknown', headers: headers));
-    }
-
-    return streams;
-  }
-
   Future<Map<String, dynamic>> _megacloudExtractorPrimary(String url) async {
     print('[_megacloudExtractorPrimary] URL: $url');
     final headers = {
@@ -240,21 +202,20 @@ class HiAnimeProvider {
       final m3u8Url = RegExp(r'"file":"(.*?)"').firstMatch(decryptedResponse.body)?.group(1) ?? '';
       print('[_megacloudExtractorPrimary] M3U8: $m3u8Url');
 
-      final streams = await _m3u8Generation(m3u8Url, mainHeaders);
-
       final subtitles = (tracks as List)
           .where((e) => e['kind'] == 'captions')
           .map((e) => SubtitleFile(e['label'], e['file']))
           .toList();
 
       return {
-        'streams': streams,
+        'streams': [VideoStream(url: m3u8Url, quality: 'Unknown', headers: mainHeaders)],
         'subtitles': subtitles.map((e) => e.file).toList(),
       };
     } else {
       print('[_megacloudExtractorPrimary] Sources are not encrypted');
-      final m3u8Url = (sources as List).first['file'];
-      final streams = await _m3u8Generation(m3u8Url, mainHeaders);
+      final streams = (sources as List)
+          .map((e) => VideoStream(url: e['file'], quality: e['label'] ?? 'default', headers: mainHeaders))
+          .toList();
 
       final subtitles = (tracks as List)
           .where((e) => e['kind'] == 'captions')
