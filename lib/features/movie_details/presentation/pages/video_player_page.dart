@@ -5,6 +5,7 @@ import 'package:better_player/better_player.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
 import 'package:netframes/features/movie_details/presentation/widgets/custom_video_controls.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String? videoUrl;
@@ -48,6 +49,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       DeviceOrientation.landscapeRight,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    WakelockPlus.enable();
 
     final firstStream = widget.videoStreams!.first;
     final url = widget.videoUrl ?? firstStream.url;
@@ -164,17 +166,35 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     return true;
   }
 
-  @override
-  void dispose() {
-    _controlsTimer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
+
+@override
+void dispose() {
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+  WakelockPlus.disable();
+
+  _controlsTimer?.cancel();
+  _controller.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          final allow = await _onWillPop();
+          if (allow && context.mounted) {
+            Navigator.of(context).pop(result);
+          }
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: GestureDetector(
@@ -200,7 +220,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               if (tapPosition < screenWidth / 2) {
                 _brightness -= details.delta.dy / 100;
                 _brightness = _brightness.clamp(0.0, 1.0);
-                ScreenBrightness().setScreenBrightness(_brightness);
+                ScreenBrightness().setApplicationScreenBrightness(_brightness);
                 _showFeedback('Brightness: ${(_brightness * 100).toInt()}%');
               } else {
                 _volume -= details.delta.dy / 100;
@@ -222,6 +242,31 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   child: BetterPlayer(controller: _controller),
                 ),
               ),
+              if (_showUnlockButton)
+                Positioned(
+                  right: 20,
+                  top: 10,
+                  child: AnimatedOpacity(
+                    opacity: _showUnlockButton ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: GestureDetector(
+                      onTap: _toggleLock, // tapping it unlocks
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: const Icon(
+                          Icons.lock_open,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               IgnorePointer(
                 ignoring: !_showControls,
                 child: AnimatedOpacity(
@@ -237,7 +282,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           _controller.videoPlayerController!.value.position;
                       VideoStream? selectedStream;
                       try {
-                        selectedStream = widget.videoStreams?.firstWhere((s) => s.url == url);
+                        selectedStream = widget.videoStreams?.firstWhere(
+                          (s) => s.url == url,
+                        );
                       } catch (e) {
                         selectedStream = null;
                       }
@@ -260,7 +307,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                                         ? s.urls?.first
                                         : s.url,
                                   ],
-                                  headers: selectedStream?.headers ?? widget.headers,
+                                  headers:
+                                      selectedStream?.headers ?? widget.headers,
                                 ),
                               )
                               .toList(),

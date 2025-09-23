@@ -257,7 +257,7 @@ class CustomVideoControlsState extends State<CustomVideoControls>
                                 child: SliderTheme(
                                   data: SliderTheme.of(context).copyWith(
                                     thumbShape: const RoundSliderThumbShape(
-                                      enabledThumbRadius: 6.0,
+                                      enabledThumbRadius: 9.0,
                                     ),
                                     overlayShape: const RoundSliderOverlayShape(
                                       overlayRadius: 15.0,
@@ -272,7 +272,7 @@ class CustomVideoControlsState extends State<CustomVideoControls>
                                         (_latestValue.duration?.inMilliseconds ??
                                                 0)
                                             .toDouble(),
-                                    activeColor: Colors.red,
+                                    // activeColor: Colors.red,
                                     inactiveColor: Colors.white70,
                                     onChanged: (value) {
                                       setState(() {
@@ -558,7 +558,7 @@ class CustomVideoControlsState extends State<CustomVideoControls>
                   groupValue: currentSource,
                   onChanged: (value) {
                     if (value != null) {
-                      widget.controller..setupSubtitleSource(value);
+                      widget.controller.setupSubtitleSource(value);
                     }
                     _toggleOptions(null);
                   },

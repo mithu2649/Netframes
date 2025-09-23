@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:netframes/features/home/data/providers/dramadrip_provider.dart';
+import 'package:netframes/features/home/data/providers/hianime_provider.dart';
 import 'package:netframes/features/home/data/providers/jio_hotstar_provider.dart';
 import 'package:netframes/features/home/data/providers/m_player_provider.dart';
 import 'package:netframes/features/home/data/providers/netflix_mirror_provider.dart';
+import 'package:netframes/features/home/data/providers/noxx_provider.dart';
 import 'package:netframes/features/home/data/providers/prime_video_provider.dart';
 import 'package:netframes/features/home/data/providers/streaming_provider.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
@@ -22,11 +24,13 @@ class _SearchPageState extends State<SearchPage> {
   Timer? _debounce;
 
   final List<StreamingProvider> _providers = [
-    DramaDripProvider(),
-    JioHotstarProvider(),
-    MPlayerProvider(),
     NetflixMirrorProvider(),
     PrimeVideoProvider(),
+    JioHotstarProvider(),
+    MPlayerProvider(),
+    HiAnimeProvider(),
+    NoxxProvider(),
+    DramaDripProvider(),
   ];
 
   Map<String, List<Movie>> _searchResults = {};
@@ -162,7 +166,7 @@ class _SearchPageState extends State<SearchPage> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
-            providerName,
+            '$providerName (${results.length} results)',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),

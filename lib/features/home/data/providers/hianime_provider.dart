@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
+import 'package:netframes/features/home/data/providers/streaming_provider.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/home/domain/entities/netflix_movie_details.dart';
 import 'package:netframes/features/home/domain/entities/video_stream.dart';
-import 'package:crypto/crypto.dart';
+// import 'package:crypto/crypto.dart';
 import 'package:netframes/features/home/data/providers/webview_resolver.dart';
 
-class HiAnimeProvider {
-  static const String _baseUrl = 'https://hianimez.to';
+class HiAnimeProvider implements StreamingProvider {
+
+  String get name => 'Hi Anime';
+  static const String _baseUrl = 'https://hianime.to';
 
   Future<Map<String, List<Movie>>> getHomePage() async {
     final List<Map<String, String>> categories = [
@@ -140,18 +143,15 @@ class HiAnimeProvider {
   }
 
   Future<Map<String, dynamic>> _megacloudExtractor(String url) async {
-    print('[_megacloudExtractor] Trying primary extractor...');
     try {
       return await _megacloudExtractorPrimary(url);
     } catch (e) {
       print('[_megacloudExtractor] Primary extractor failed: $e');
-      print('[_megacloudExtractor] Trying fallback extractor...');
       return await _megacloudExtractorFallback(url);
     }
   }
 
   Future<Map<String, dynamic>> _megacloudExtractorPrimary(String url) async {
-    print('[_megacloudExtractorPrimary] URL: $url');
     final headers = {
       'Accept': '*/*',
       'X-Requested-With': 'XMLHttpRequest',
@@ -159,20 +159,16 @@ class HiAnimeProvider {
     };
 
     final videoId = url.split('/').last.split('?').first;
-    print('[_megacloudExtractorPrimary] Video ID: $videoId');
 
     final nonceResponse = await http.get(Uri.parse(url), headers: headers);
     final nonce = RegExp(r'\b[a-zA-Z0-9]{48}\b').firstMatch(nonceResponse.body)?.group(0) ?? 
         RegExp(r'\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b')
             .firstMatch(nonceResponse.body)
             ?.let((it) => it.group(1)! + it.group(2)! + it.group(3)!);
-    print('[_megacloudExtractorPrimary] Nonce: $nonce');
 
     final sourceUrl = 'https://megacloud.blog/embed-2/v3/e-1/getSources?id=$videoId&_k=$nonce';
-    print('[_megacloudExtractorPrimary] Source URL: $sourceUrl');
 
     final response = await http.get(Uri.parse(sourceUrl), headers: headers);
-    print('[_megacloudExtractorPrimary] Source response: ${response.body}');
 
     final data = jsonDecode(response.body);
     final sources = data['sources'];
@@ -191,7 +187,6 @@ class HiAnimeProvider {
     };
 
     if (sources is String) {
-      print('[_megacloudExtractorPrimary] Sources are encrypted');
       final keyResponse = await http.get(Uri.parse('https://raw.githubusercontent.com/yogesh-hacker/MegacloudKeys/refs/heads/main/keys.json'));
       final key = jsonDecode(keyResponse.body)['megacloud'];
 
@@ -200,19 +195,18 @@ class HiAnimeProvider {
 
       final decryptedResponse = await http.get(Uri.parse(fullUrl));
       final m3u8Url = RegExp(r'"file":"(.*?)"').firstMatch(decryptedResponse.body)?.group(1) ?? '';
-      print('[_megacloudExtractorPrimary] M3U8: $m3u8Url');
 
       final subtitles = (tracks as List)
           .where((e) => e['kind'] == 'captions')
           .map((e) => SubtitleFile(e['label'], e['file']))
           .toList();
+      print('[_megacloudExtractorPrimary] Subtitles: $subtitles');
 
       return {
         'streams': [VideoStream(url: m3u8Url, quality: 'Unknown', headers: mainHeaders)],
-        'subtitles': subtitles.map((e) => e.file).toList(),
+        'subtitles': subtitles,
       };
     } else {
-      print('[_megacloudExtractorPrimary] Sources are not encrypted');
       final streams = (sources as List)
           .map((e) => VideoStream(url: e['file'], quality: e['label'] ?? 'default', headers: mainHeaders))
           .toList();
@@ -221,16 +215,16 @@ class HiAnimeProvider {
           .where((e) => e['kind'] == 'captions')
           .map((e) => SubtitleFile(e['label'], e['file']))
           .toList();
+      print('[_megacloudExtractorPrimary] Subtitles: $subtitles');
 
       return {
         'streams': streams,
-        'subtitles': subtitles.map((e) => e.file).toList(),
+        'subtitles': subtitles,
       };
     }
   }
 
   Future<Map<String, dynamic>> _megacloudExtractorFallback(String url) async {
-    print('[_megacloudExtractorFallback] URL: $url');
     final jsToClickPlay = """
       (() => {
           const btn = document.querySelector('.jw-icon-display.jw-button-color.jw-reset');
@@ -246,7 +240,6 @@ class HiAnimeProvider {
     );
 
     final m3u8Url = await resolver.resolve(url);
-    print('[_megacloudExtractorFallback] M3U8: $m3u8Url');
 
     return {
       'streams': [VideoStream(url: m3u8Url, quality: 'Unknown')],
@@ -254,16 +247,21 @@ class HiAnimeProvider {
     };
   }
 
-  String _decrypt(String encrypted, String key) {
-    final keyBytes = utf8.encode(key);
-    final encryptedBytes = base64.decode(encrypted);
-    final hmac = Hmac(sha256, keyBytes);
-    final digest = hmac.convert(encryptedBytes.sublist(16));
-    final decrypted = <int>[];
-    for (var i = 0; i < encryptedBytes.length - 16; i++) {
-      decrypted.add(encryptedBytes[i] ^ digest.bytes[i % digest.bytes.length]);
-    }
-    return utf8.decode(decrypted);
+  // String _decrypt(String encrypted, String key) {
+  //   final keyBytes = utf8.encode(key);
+  //   final encryptedBytes = base64.decode(encrypted);
+  //   final hmac = Hmac(sha256, keyBytes);
+  //   final digest = hmac.convert(encryptedBytes.sublist(16));
+  //   final decrypted = <int>[];
+  //   for (var i = 0; i < encryptedBytes.length - 16; i++) {
+  //     decrypted.add(encryptedBytes[i] ^ digest.bytes[i % digest.bytes.length]);
+  //   }
+  //   return utf8.decode(decrypted);
+  // }
+
+  @override
+  Future<void> clearCache() async {
+    return;
   }
 }
 
@@ -294,6 +292,8 @@ class MegacloudResponse {
       server: json['server'],
     );
   }
+
+  
 }
 
 class Source {

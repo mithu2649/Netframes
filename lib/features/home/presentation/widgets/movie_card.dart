@@ -30,12 +30,9 @@ class MovieCard extends StatelessWidget {
         : 'https://image.tmdb.org/t/p/w500${movie.posterPath}';
 
     final httpHeaders =
-        movie.provider == 'Netflix' ||
-            movie.provider == 'JioHotstar' ||
-            movie.provider == 'PrimeVideo' ||
-            movie.provider == 'DramaDrip'
-        ? {'Referer': 'https://dramadrip.com/'}
-        : null;
+        movie.provider == 'DramaDrip'
+          ? {'Referer': 'https://dramadrip.com/'}
+          : null;
 
     return GestureDetector(
       onTap: () {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:netframes/features/home/presentation/pages/home_page.dart';
 import 'package:netframes/features/library/presentation/pages/library_page.dart';
+import 'package:netframes/features/live_tv/presentation/pages/live_tv_page.dart';
 import 'package:netframes/features/search/presentation/pages/search_page.dart';
 import 'package:netframes/features/settings/presentation/pages/settings_page.dart';
 import 'package:netframes/features/tv_shows/presentation/pages/tv_shows_page.dart';
@@ -23,6 +24,7 @@ class _ShellPageState extends State<ShellPage>
   static const List<Widget> _widgetOptions = <Widget>[
     HomePage(),
     TvShowsPage(),
+    LiveTvPage(),
     LibraryPage(),
   ];
 
@@ -71,21 +73,25 @@ class _ShellPageState extends State<ShellPage>
 
   @override
   Widget build(BuildContext context) {
+    final bool isLiveTvPage = _selectedIndex == 2;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Netframes'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsPage()),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: isLiveTvPage
+          ? null
+          : AppBar(
+              title: const Text('Netframes'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SettingsPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
       body: NotificationListener<ScrollNotification>(
         onNotification: (scrollNotification) {
           if (scrollNotification is UserScrollNotification) {
@@ -110,34 +116,39 @@ class _ShellPageState extends State<ShellPage>
         },
         child: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       ),
-      floatingActionButton: _showFabExtended
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SearchPage()),
-                );
-              },
-              label: const Text('Search'),
-              icon: const Icon(Icons.search),
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-            )
-          : FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SearchPage()),
-                );
-              },
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-              child: const Icon(Icons.search),
-            ),
+      floatingActionButton: isLiveTvPage
+          ? null
+          : _showFabExtended
+              ? FloatingActionButton.extended(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SearchPage()),
+                    );
+                  },
+                  label: const Text('Search'),
+                  icon: const Icon(Icons.search),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.secondaryContainer,
+                )
+              : FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SearchPage()),
+                    );
+                  },
+                  backgroundColor:
+                      Theme.of(context).colorScheme.secondaryContainer,
+                  child: const Icon(Icons.search),
+                ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
         destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(Icons.movie), label: 'Movies'),
           NavigationDestination(icon: Icon(Icons.tv), label: 'TV Shows'),
+          NavigationDestination(icon: Icon(Icons.live_tv), label: 'Live TV'),
           NavigationDestination(
             icon: Icon(Icons.video_library),
             label: 'Library',

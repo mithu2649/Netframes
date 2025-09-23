@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/core/api/movie_api_service.dart';
 import 'package:netframes/core/services/watchlist_service.dart';
-import 'package:netframes/features/common/pages/watch_now_page.dart'; // Added import
+import 'package:netframes/features/common/pages/watch_now_page.dart';
 import 'package:netframes/features/home/domain/entities/movie.dart';
 import 'package:netframes/features/home/presentation/widgets/movie_list.dart';
 import 'package:netframes/features/movie_details/presentation/bloc/movie_details_bloc.dart';
@@ -127,7 +127,7 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                     const SizedBox(height: 16.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment
-                          .spaceBetween, // Changed from spaceEvenly
+                          .spaceBetween,
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(

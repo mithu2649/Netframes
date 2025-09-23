@@ -11,12 +11,14 @@ class MovieList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Column(      
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          padding: const EdgeInsets.fromLTRB(7, 9, 7, 0),
+          child: Text(title,             
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
+),
         ),
         SizedBox(
           height: 200,
