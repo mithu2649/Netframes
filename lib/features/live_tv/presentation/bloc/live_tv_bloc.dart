@@ -17,8 +17,14 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
         final result = await _iptvRepository.fetchChannels();
         final channels = result['channels'] as List<Channel>;
         final categories = result['categories'] as List<String>;
+
+        if (channels.isEmpty) {
+          emit(const LiveTvError('No channels could be loaded.'));
+          return;
+        }
+
         final favoriteChannelIds = await _favoritesService.getFavorites();
-        final initialChannelUrl = channels.isNotEmpty ? channels.first.url : '';
+        final initialChannelUrl = channels.first.url;
 
         emit(LiveTvLoaded(
           allChannels: channels,
@@ -28,10 +34,21 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
           searchQuery: '',
           currentChannelUrl: initialChannelUrl,
           favoriteChannelIds: favoriteChannelIds,
-          isInitialAutoPlay: true,
+          isAutoStartupSequence: true,
         ));
       } catch (e) {
         emit(LiveTvError(e.toString()));
+      }
+    });
+
+    on<LiveTvTabEntered>((event, emit) {
+      if (state is LiveTvLoaded) {
+        final currentState = state as LiveTvLoaded;
+        // Restart the auto-sequence.
+        emit(currentState.copyWith(
+          currentChannelUrl: currentState.allChannels.first.url,
+          isAutoStartupSequence: true,
+        ));
       }
     });
 
@@ -40,8 +57,39 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
         final currentState = state as LiveTvLoaded;
         emit(currentState.copyWith(
           currentChannelUrl: event.channelUrl,
-          isInitialAutoPlay: false,
+          isAutoStartupSequence: false,
         ));
+      }
+    });
+
+    on<PlaybackSuccessful>((event, emit) {
+      if (state is LiveTvLoaded) {
+        final currentState = state as LiveTvLoaded;
+        if (currentState.isAutoStartupSequence) {
+          emit(currentState.copyWith(isAutoStartupSequence: false));
+        }
+      }
+    });
+
+    on<PlayerErrorOccurred>((event, emit) {
+      if (state is LiveTvLoaded) {
+        final currentState = state as LiveTvLoaded;
+        if (currentState.isAutoStartupSequence) {
+          final allChannels = currentState.allChannels;
+          final currentUrl = currentState.currentChannelUrl;
+
+          final currentIndex = allChannels.indexWhere((c) => c.url == currentUrl);
+
+          if (currentIndex != -1 && currentIndex < allChannels.length - 1) {
+            final nextChannel = allChannels[currentIndex + 1];
+            emit(currentState.copyWith(
+              currentChannelUrl: nextChannel.url,
+              isAutoStartupSequence: true,
+            ));
+          } else {
+            emit(currentState.copyWith(isAutoStartupSequence: false));
+          }
+        }
       }
     });
 
@@ -111,32 +159,6 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
           searchQuery: event.query,
           filteredChannels: filteredChannels,
         ));
-      }
-    });
-
-    on<PlayerErrorOccurred>((event, emit) {
-      if (state is LiveTvLoaded) {
-        final currentState = state as LiveTvLoaded;
-        if (currentState.isInitialAutoPlay) {
-          final currentIndex = currentState.allChannels
-              .indexWhere((c) => c.url == currentState.currentChannelUrl);
-          if (currentIndex != -1 &&
-              currentIndex < currentState.allChannels.length - 1) {
-            final nextChannel = currentState.allChannels[currentIndex + 1];
-            emit(currentState.copyWith(
-                currentChannelUrl: nextChannel.url,
-                isInitialAutoPlay: true)); // Keep flag true for auto-skip chain
-          }
-        }
-      }
-    });
-
-    on<PlaybackSuccessful>((event, emit) {
-      if (state is LiveTvLoaded) {
-        final currentState = state as LiveTvLoaded;
-        if (currentState.isInitialAutoPlay) {
-          emit(currentState.copyWith(isInitialAutoPlay: false));
-        }
       }
     });
   }

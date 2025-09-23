@@ -9,6 +9,8 @@ abstract class LiveTvEvent extends Equatable {
 
 class FetchChannels extends LiveTvEvent {}
 
+class LiveTvTabEntered extends LiveTvEvent {}
+
 class ChannelSelected extends LiveTvEvent {
   final String channelUrl;
 

@@ -20,7 +20,7 @@ class LiveTvLoaded extends LiveTvState {
   final String searchQuery;
   final String currentChannelUrl;
   final List<String> favoriteChannelIds;
-  final bool isInitialAutoPlay;
+  final bool isAutoStartupSequence;
 
   const LiveTvLoaded({
     required this.allChannels,
@@ -30,7 +30,7 @@ class LiveTvLoaded extends LiveTvState {
     required this.searchQuery,
     required this.currentChannelUrl,
     required this.favoriteChannelIds,
-    this.isInitialAutoPlay = false,
+    this.isAutoStartupSequence = false,
   });
 
   @override
@@ -42,7 +42,7 @@ class LiveTvLoaded extends LiveTvState {
         searchQuery,
         currentChannelUrl,
         favoriteChannelIds,
-        isInitialAutoPlay,
+        isAutoStartupSequence,
       ];
 
   LiveTvLoaded copyWith({
@@ -53,7 +53,7 @@ class LiveTvLoaded extends LiveTvState {
     String? searchQuery,
     String? currentChannelUrl,
     List<String>? favoriteChannelIds,
-    bool? isInitialAutoPlay,
+    bool? isAutoStartupSequence,
   }) {
     return LiveTvLoaded(
       allChannels: allChannels ?? this.allChannels,
@@ -63,7 +63,7 @@ class LiveTvLoaded extends LiveTvState {
       searchQuery: searchQuery ?? this.searchQuery,
       currentChannelUrl: currentChannelUrl ?? this.currentChannelUrl,
       favoriteChannelIds: favoriteChannelIds ?? this.favoriteChannelIds,
-      isInitialAutoPlay: isInitialAutoPlay ?? this.isInitialAutoPlay,
+      isAutoStartupSequence: isAutoStartupSequence ?? this.isAutoStartupSequence,
     );
   }
 }

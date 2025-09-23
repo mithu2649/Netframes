@@ -26,6 +26,8 @@ class IptvRepository {
       });
 
       final categories = channels.map((c) => c.group).toSet().toList();
+      categories.removeWhere((c) => c.isEmpty);
+      categories.sort();
       categories.insert(0, 'All');
 
       return {'channels': channels, 'categories': categories};
@@ -36,19 +38,32 @@ class IptvRepository {
 
   List<Channel> _parseM3u(String content) {
     final List<Channel> channels = [];
+    final Set<String> seenIds = {};
     final lines = content.split('\n');
 
     for (int i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('#EXTINF')) {
         final info = lines[i];
-        final url = lines[++i].trim();
+
+        String url = '';
+        int j = i + 1;
+        while (j < lines.length) {
+          final line = lines[j].trim();
+          if (line.isNotEmpty && !line.startsWith('#')) {
+            url = line;
+            break;
+          }
+          j++;
+        }
+
+        i = j;
 
         final tvgId = _getAttribute(info, 'tvg-id');
         final tvgLogo = _getAttribute(info, 'tvg-logo');
         final groupTitle = _getAttribute(info, 'group-title');
         final name = info.split(',').last.trim();
 
-        if (url.isNotEmpty) {
+        if (url.isNotEmpty && tvgId.isNotEmpty && !seenIds.contains(tvgId)) {
           channels.add(Channel(
             id: tvgId,
             name: name,
@@ -56,6 +71,7 @@ class IptvRepository {
             group: groupTitle,
             url: url,
           ));
+          seenIds.add(tvgId);
         }
       }
     }

@@ -1,7 +1,6 @@
 import 'package:better_player/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:netframes/features/live_tv/data/models/channel_model.dart';
 import 'package:netframes/features/live_tv/data/repositories/iptv_repository.dart';
@@ -9,6 +8,7 @@ import 'package:netframes/features/live_tv/data/services/favorites_service.dart'
 import 'package:netframes/features/live_tv/presentation/bloc/live_tv_bloc.dart';
 import 'package:netframes/features/live_tv/presentation/bloc/live_tv_event.dart';
 import 'package:netframes/features/live_tv/presentation/bloc/live_tv_state.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class LiveTvPage extends StatelessWidget {
   const LiveTvPage({super.key});
@@ -42,13 +42,20 @@ class _LiveTvViewState extends State<LiveTvView> {
       aspectRatio: 16 / 9,
       fit: BoxFit.contain,
       autoPlay: true,
+      handleLifecycle: true,
     );
     _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
+
     _betterPlayerController.addEventsListener((event) {
+      final bloc = context.read<LiveTvBloc>();
+      final currentState = bloc.state;
+
       if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
-        context.read<LiveTvBloc>().add(PlayerErrorOccurred());
-      } else if (event.betterPlayerEventType == BetterPlayerEventType.progress) {
-        context.read<LiveTvBloc>().add(PlaybackSuccessful());
+        bloc.add(PlayerErrorOccurred());
+      } else if (event.betterPlayerEventType == BetterPlayerEventType.play) {
+        if (currentState is LiveTvLoaded && currentState.isAutoStartupSequence) {
+          bloc.add(PlaybackSuccessful());
+        }
       }
     });
   }
@@ -61,78 +68,85 @@ class _LiveTvViewState extends State<LiveTvView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: BlocConsumer<LiveTvBloc, LiveTvState>(
-          listener: (context, state) {
-            if (state is LiveTvLoaded) {
-              if (state.currentChannelUrl.isNotEmpty &&
-                  state.currentChannelUrl !=
-                      _betterPlayerController.betterPlayerDataSource?.url) {
-                BetterPlayerDataSource dataSource = BetterPlayerDataSource(
-                  BetterPlayerDataSourceType.network,
-                  state.currentChannelUrl,
-                  liveStream: true,
-                );
-                try {
+    return VisibilityDetector(
+      key: const Key('live_tv_page'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (visibilityInfo.visibleFraction == 1.0) {
+          context.read<LiveTvBloc>().add(LiveTvTabEntered());
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: BlocConsumer<LiveTvBloc, LiveTvState>(
+            listener: (context, state) {
+              if (state is LiveTvLoaded) {
+                if (state.currentChannelUrl.isNotEmpty &&
+                    state.currentChannelUrl !=
+                        _betterPlayerController.betterPlayerDataSource?.url) {
+                  BetterPlayerDataSource dataSource = BetterPlayerDataSource(
+                    BetterPlayerDataSourceType.network,
+                    state.currentChannelUrl,
+                    liveStream: true,
+                  );
                   _betterPlayerController.setupDataSource(dataSource);
-                } on PlatformException {
-                  context.read<LiveTvBloc>().add(PlayerErrorOccurred());
                 }
               }
-            }
-          },
-          builder: (context, state) {
-            if (state is LiveTvLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is LiveTvLoaded) {
-              final currentChannel = state.allChannels.firstWhere(
-                (channel) => channel.url == state.currentChannelUrl,
-                orElse: () => state.allChannels.first,
-              );
-              return Column(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: BetterPlayer(controller: _betterPlayerController),
-                  ),
-                  NowPlaying(channel: currentChannel),
-                  CategoryChips(),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: state.filteredChannels.length,
-                      itemBuilder: (context, index) {
-                        final channel = state.filteredChannels[index];
-                        final isPlaying = channel.url == state.currentChannelUrl;
-                        final isFavorite =
-                            state.favoriteChannelIds.contains(channel.id);
-                        return ChannelListItem(
-                          channel: channel,
-                          isPlaying: isPlaying,
-                          isFavorite: isFavorite,
-                          onTap: () {
-                            context
-                                .read<LiveTvBloc>()
-                                .add(ChannelSelected(channel.url));
-                          },
-                          onFavorite: () {
-                            context
-                                .read<LiveTvBloc>()
-                                .add(ToggleFavorite(channel.id));
-                          },
-                        );
-                      },
+            },
+            builder: (context, state) {
+              if (state is LiveTvLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is LiveTvLoaded) {
+                if (state.allChannels.isEmpty) {
+                  return const Center(child: Text('No channels found.'));
+                }
+                final currentChannel = state.allChannels.firstWhere(
+                  (channel) => channel.url == state.currentChannelUrl,
+                  orElse: () => state.allChannels.first,
+                );
+                return Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: BetterPlayer(controller: _betterPlayerController),
                     ),
-                  ),
-                  SearchBar(),
-                ],
-              );
-            } else if (state is LiveTvError) {
-              return Center(child: Text(state.message));
-            } else {
-              return const Center(child: Text('Welcome to Live TV'));
-            }
-          },
+                    NowPlaying(channel: currentChannel),
+                    CategoryChips(),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: state.filteredChannels.length,
+                        itemBuilder: (context, index) {
+                          final channel = state.filteredChannels[index];
+                          final isPlaying = channel.url == state.currentChannelUrl;
+                          final isFavorite =
+                              state.favoriteChannelIds.contains(channel.id);
+                          return ChannelListItem(
+                            channel: channel,
+                            isPlaying: isPlaying,
+                            isFavorite: isFavorite,
+                            onTap: () {
+                              context
+                                  .read<LiveTvBloc>()
+                                  .add(ChannelSelected(channel.url));
+                            },
+                            onFavorite: () {
+                              context
+                                  .read<LiveTvBloc>()
+                                  .add(ToggleFavorite(channel.id));
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    SearchBar(),
+                  ],
+                );
+              } else if (state is LiveTvError) {
+                return Center(child: Text(state.message));
+              } else {
+                return const Center(child: Text('Welcome to Live TV'));
+              }
+            },
+          ),
         ),
       ),
     );
@@ -159,8 +173,10 @@ class NowPlaying extends StatelessWidget {
                 fit: BoxFit.cover,
                 width: 50,
                 height: 50,
-                placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Icon(Icons.tv, size: 25),
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) =>
+                    const Icon(Icons.tv, size: 25),
               ),
             ),
           ),
@@ -169,7 +185,8 @@ class NowPlaying extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(channel.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(channel.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(channel.group),
               ],
             ),
@@ -200,7 +217,9 @@ class CategoryChips extends StatelessWidget {
                     selected: state.selectedCategory == category,
                     onSelected: (selected) {
                       if (selected) {
-                        context.read<LiveTvBloc>().add(CategorySelected(category));
+                        context
+                            .read<LiveTvBloc>()
+                            .add(CategorySelected(category));
                       }
                     },
                   ),
@@ -278,9 +297,9 @@ class _ChannelListItemState extends State<ChannelListItem>
     if (widget.isPlaying != oldWidget.isPlaying) {
       if (widget.isPlaying) {
         _animationController.repeat(reverse: true);
-      } else {
-        _animationController.stop();
       }
+    } else {
+      _animationController.stop();
     }
   }
 
