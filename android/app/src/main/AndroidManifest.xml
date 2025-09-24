@@ -8,6 +8,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true"
         >
         <activity
             android:name=".MainActivity"
@@ -36,6 +37,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+         <receiver android:name="com.google.android.exoplayer2.ui.MediaButtonReceiver" 
+     android:exported="false">
+             <intent-filter>
+                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+             </intent-filter>
+         </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

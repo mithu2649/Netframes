@@ -24,41 +24,96 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
         }
 
         final favoriteChannelIds = await _favoritesService.getFavorites();
-        final initialChannelUrl = channels.first.url;
+        final initialChannel = channels.first;
+        final filteredChannels = _filterChannels(channels, 'Zee', '');
 
         emit(LiveTvLoaded(
           allChannels: channels,
-          filteredChannels: channels,
+          filteredChannels: filteredChannels,
           categories: categories,
-          selectedCategory: 'All',
+          selectedCategory: 'Zee',
           searchQuery: '',
-          currentChannelUrl: initialChannelUrl,
+          currentChannel: initialChannel,
+          currentChannelUrl: initialChannel.isZee ? '' : initialChannel.url,
+          headers: const {},
           favoriteChannelIds: favoriteChannelIds,
           isAutoStartupSequence: true,
+          isStreamLoading: initialChannel.isZee,
         ));
+
+        if (initialChannel.isZee) {
+          final streamUrl = await _iptvRepository.getZeeStreamUrl(initialChannel.id);
+          final headers = {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+          };
+          emit((state as LiveTvLoaded).copyWith(
+            currentChannelUrl: streamUrl,
+            headers: headers,
+            isStreamLoading: false,
+          ));
+        }
       } catch (e) {
         emit(LiveTvError(e.toString()));
       }
     });
 
-    on<LiveTvTabEntered>((event, emit) {
+    on<LiveTvTabEntered>((event, emit) async {
       if (state is LiveTvLoaded) {
         final currentState = state as LiveTvLoaded;
-        // Restart the auto-sequence.
+        final initialChannel = currentState.allChannels.first;
+
         emit(currentState.copyWith(
-          currentChannelUrl: currentState.allChannels.first.url,
+          currentChannel: initialChannel,
+          currentChannelUrl: initialChannel.isZee ? '' : initialChannel.url,
+          headers: {},
           isAutoStartupSequence: true,
+          isStreamLoading: initialChannel.isZee,
         ));
+
+        if (initialChannel.isZee) {
+          final streamUrl = await _iptvRepository.getZeeStreamUrl(initialChannel.id);
+          final headers = {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+          };
+          emit((state as LiveTvLoaded).copyWith(
+            currentChannelUrl: streamUrl,
+            headers: headers,
+            isStreamLoading: false,
+          ));
+        }
       }
     });
 
-    on<ChannelSelected>((event, emit) {
+    on<ChannelSelected>((event, emit) async {
       if (state is LiveTvLoaded) {
         final currentState = state as LiveTvLoaded;
-        emit(currentState.copyWith(
-          currentChannelUrl: event.channelUrl,
-          isAutoStartupSequence: false,
-        ));
+        final channel = currentState.allChannels
+            .firstWhere((element) => element.url == event.channelUrl);
+
+        if (channel.isZee) {
+          emit(currentState.copyWith(isStreamLoading: true, currentChannel: channel));
+          final streamUrl = await _iptvRepository.getZeeStreamUrl(channel.id);
+          final headers = {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+          };
+          emit(currentState.copyWith(
+            currentChannel: channel,
+            currentChannelUrl: streamUrl,
+            headers: headers,
+            isAutoStartupSequence: false,
+            isStreamLoading: false,
+          ));
+        } else {
+          emit(currentState.copyWith(
+            currentChannel: channel,
+            currentChannelUrl: event.channelUrl,
+            headers: {},
+            isAutoStartupSequence: false,
+          ));
+        }
       }
     });
 
@@ -83,6 +138,7 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
           if (currentIndex != -1 && currentIndex < allChannels.length - 1) {
             final nextChannel = allChannels[currentIndex + 1];
             emit(currentState.copyWith(
+              currentChannel: nextChannel,
               currentChannelUrl: nextChannel.url,
               isAutoStartupSequence: true,
             ));
@@ -170,7 +226,9 @@ class LiveTvBloc extends Bloc<LiveTvEvent, LiveTvState> {
   ) {
     List<Channel> filtered = channels;
 
-    if (category != 'All') {
+    if (category == 'Zee') {
+      filtered = filtered.where((c) => c.isZee).toList();
+    } else if (category != 'All') {
       filtered = filtered.where((c) => c.group == category).toList();
     }
 

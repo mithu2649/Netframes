@@ -1,18 +1,22 @@
 import 'package:http/http.dart' as http;
 import 'package:netframes/features/live_tv/data/models/channel_model.dart';
 import 'package:netframes/features/live_tv/data/services/favorites_service.dart';
+import 'package:netframes/features/live_tv/data/services/zee_service.dart';
 
 class IptvRepository {
   final String _url = 'https://iptv-org.github.io/iptv/countries/in.m3u';
   final FavoritesService _favoritesService;
+  final ZeeService _zeeService;
 
-  IptvRepository(this._favoritesService);
+  IptvRepository(this._favoritesService) : _zeeService = ZeeService();
 
   Future<Map<String, dynamic>> fetchChannels() async {
     final response = await http.get(Uri.parse(_url));
     if (response.statusCode == 200) {
       final channels = _parseM3u(response.body);
       final favoriteIds = await _favoritesService.getFavorites();
+      final zeeChannels = await _zeeService.fetchZeeChannels();
+      channels.addAll(zeeChannels);
       channels.sort((a, b) {
         final aIsFavorite = favoriteIds.contains(a.id);
         final bIsFavorite = favoriteIds.contains(b.id);
@@ -29,6 +33,7 @@ class IptvRepository {
       categories.removeWhere((c) => c.isEmpty);
       categories.sort();
       categories.insert(0, 'All');
+      categories.insert(0, 'Zee');
 
       return {'channels': channels, 'categories': categories};
     } else {
@@ -70,6 +75,7 @@ class IptvRepository {
             logo: tvgLogo,
             group: groupTitle,
             url: url,
+            isZee: false,
           ));
           seenIds.add(tvgId);
         }
@@ -87,5 +93,9 @@ class IptvRepository {
     } catch (e) {
       return '';
     }
+  }
+
+  Future<String> getZeeStreamUrl(String channelId) {
+    return _zeeService.getStreamUrl(channelId);
   }
 }

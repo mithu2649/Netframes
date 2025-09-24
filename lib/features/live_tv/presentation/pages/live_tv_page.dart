@@ -34,6 +34,8 @@ class LiveTvView extends StatefulWidget {
 
 class _LiveTvViewState extends State<LiveTvView> {
   late BetterPlayerController _betterPlayerController;
+  late Function(BetterPlayerEvent) _eventListener;
+  final _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -41,12 +43,12 @@ class _LiveTvViewState extends State<LiveTvView> {
     BetterPlayerConfiguration betterPlayerConfiguration = const BetterPlayerConfiguration(
       aspectRatio: 16 / 9,
       fit: BoxFit.contain,
-      autoPlay: true,
+      autoPlay: false,
       handleLifecycle: true,
     );
     _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
 
-    _betterPlayerController.addEventsListener((event) {
+    _eventListener = (event) {
       final bloc = context.read<LiveTvBloc>();
       final currentState = bloc.state;
 
@@ -57,12 +59,15 @@ class _LiveTvViewState extends State<LiveTvView> {
           bloc.add(PlaybackSuccessful());
         }
       }
-    });
+    };
+    _betterPlayerController.addEventsListener(_eventListener);
   }
 
   @override
   void dispose() {
+    _betterPlayerController.removeEventsListener(_eventListener);
     _betterPlayerController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -71,7 +76,8 @@ class _LiveTvViewState extends State<LiveTvView> {
     return VisibilityDetector(
       key: const Key('live_tv_page'),
       onVisibilityChanged: (visibilityInfo) {
-        if (visibilityInfo.visibleFraction == 1.0) {
+        if (visibilityInfo.visibleFraction == 1.0 &&
+            !_searchFocusNode.hasFocus) {
           context.read<LiveTvBloc>().add(LiveTvTabEntered());
         }
       },
@@ -87,8 +93,10 @@ class _LiveTvViewState extends State<LiveTvView> {
                     BetterPlayerDataSourceType.network,
                     state.currentChannelUrl,
                     liveStream: true,
+                    headers: state.headers,
                   );
                   _betterPlayerController.setupDataSource(dataSource);
+                  _betterPlayerController.play();
                 }
               }
             },
@@ -99,15 +107,18 @@ class _LiveTvViewState extends State<LiveTvView> {
                 if (state.allChannels.isEmpty) {
                   return const Center(child: Text('No channels found.'));
                 }
-                final currentChannel = state.allChannels.firstWhere(
-                  (channel) => channel.url == state.currentChannelUrl,
-                  orElse: () => state.allChannels.first,
-                );
+                final currentChannel = state.currentChannel;
                 return Column(
                   children: [
                     AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: BetterPlayer(controller: _betterPlayerController),
+                      child: Stack(
+                        children: [
+                          BetterPlayer(controller: _betterPlayerController),
+                          if (state.isStreamLoading)
+                            const Center(child: CircularProgressIndicator()),
+                        ],
+                      ),
                     ),
                     NowPlaying(channel: currentChannel),
                     CategoryChips(),
@@ -116,7 +127,7 @@ class _LiveTvViewState extends State<LiveTvView> {
                         itemCount: state.filteredChannels.length,
                         itemBuilder: (context, index) {
                           final channel = state.filteredChannels[index];
-                          final isPlaying = channel.url == state.currentChannelUrl;
+                          final isPlaying = channel.id == state.currentChannel.id;
                           final isFavorite =
                               state.favoriteChannelIds.contains(channel.id);
                           return ChannelListItem(
@@ -137,7 +148,7 @@ class _LiveTvViewState extends State<LiveTvView> {
                         },
                       ),
                     ),
-                    SearchBar(),
+                    SearchBar(focusNode: _searchFocusNode),
                   ],
                 );
               } else if (state is LiveTvError) {
@@ -235,11 +246,16 @@ class CategoryChips extends StatelessWidget {
 }
 
 class SearchBar extends StatelessWidget {
+  final FocusNode focusNode;
+
+  const SearchBar({super.key, required this.focusNode});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextField(
+        focusNode: focusNode,
         onChanged: (query) {
           context.read<LiveTvBloc>().add(SearchQueryChanged(query));
         },
@@ -311,34 +327,37 @@ class _ChannelListItemState extends State<ChannelListItem>
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: CachedNetworkImage(
-        imageUrl: widget.channel.logo,
-        width: 50,
-        placeholder: (context, url) => const SizedBox(
+    return Container(
+      color: widget.isPlaying ? Colors.grey.withOpacity(0.3) : null,
+      child: ListTile(
+        leading: CachedNetworkImage(
+          imageUrl: widget.channel.logo,
           width: 50,
-          height: 50,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        errorWidget: (context, url, error) => const Icon(Icons.tv),
-      ),
-      title: Text(widget.channel.name),
-      subtitle: Text(widget.channel.group),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.isPlaying)
-            FadeTransition(
-              opacity: _animationController,
-              child: const Text('Playing Now'),
-            ),
-          IconButton(
-            icon: Icon(widget.isFavorite ? Icons.favorite : Icons.favorite_border),
-            onPressed: widget.onFavorite,
+          placeholder: (context, url) => const SizedBox(
+            width: 50,
+            height: 50,
+            child: Center(child: CircularProgressIndicator()),
           ),
-        ],
+          errorWidget: (context, url, error) => const Icon(Icons.tv),
+        ),
+        title: Text(widget.channel.name),
+        subtitle: Text(widget.channel.group),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.isPlaying)
+              FadeTransition(
+                opacity: _animationController,
+                child: const Text('Playing Now'),
+              ),
+            IconButton(
+              icon: Icon(widget.isFavorite ? Icons.favorite : Icons.favorite_border),
+              onPressed: widget.onFavorite,
+            ),
+          ],
+        ),
+        onTap: widget.onTap,
       ),
-      onTap: widget.onTap,
     );
   }
 }

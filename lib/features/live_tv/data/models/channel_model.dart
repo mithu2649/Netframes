@@ -4,6 +4,7 @@ class Channel {
   final String logo;
   final String group;
   final String url;
+  final bool isZee;
 
   Channel({
     required this.id,
@@ -11,5 +12,6 @@ class Channel {
     required this.logo,
     required this.group,
     required this.url,
+    this.isZee = false,
   });
 }
